@@ -1,4 +1,4 @@
-enum {__ALIGN = 8};// 以8的倍数构建free list
+enum {__ALIGN = 8};// 以8的倍数构建free list，原因在于指针在主流的64位操作系统下为8字节，原因见union obj
 enum {__MAX_BYTES = 128};
 enum {__NFREELISTS = __MAX_BYTES/__ALIGN};
 
@@ -9,9 +9,12 @@ private:
         return (((bytes) + __ALIGN - 1) & ~(__ALIGN - 1));
     }
 private:
-    union obj {
-        union obj * free_list_link;
-        char client_data[1];// 用char是因为char就是1 byte
+    union obj {// union的空间大小应为两个元素的最大值，char只需要1byte，而指针在64位系统下却需要8byte
+        union obj * free_list_link;// 就是因为这个指针成员，free list目前都是以8byte为基础递增的
+        char client_data[1];// 用char是因为char就是1 byte，而int在不同环境大小不一定一样
+        // 普通指针和迭代器不一样,它的移动其实不依赖指向的是不是数组(对象类型)
+        // “指针+数字”在内存空间递增的量，只取决于它指向什么类型
+        // 以前一直把“指针+数字“的用法和数组一起用，都没意识到这一点
     };
 private:
     static obj * volatile free_list[__NFREELISTS];// 这个volatile是个和线程有关的关键字
@@ -144,29 +147,36 @@ chunk_alloc(size_t size, int& nobjs)
             // 内存池内还有一些零头，先配给适当的free list，首先寻找适当的free list
             obj * volatile * my_free_list = free_list + FREELIST_INDEX(bytes_left);
             // 调整free list，将内存池中的残余空间编入
-            ((obj *)start_free) -> free_list_link = *my_free_list;
-            *my_free_list = (obj *)start_free;
-        }
+            ((obj *)start_free) -> free_list_link = *my_free_list;// 担心最小的情况不够8bytes？别担心，内存池生成时8就是最小单位
+            *my_free_list = (obj *)start_free;// 每次取用也是8的整数倍，所以有剩余空间时必然是8的整数倍，最小也是8bytes。
+        }// 这步做完后，内存池就是空的了
 
+        // 配置heap空间，来补充内存池
         start_free = (char *)malloc(bytes_to_get);
-        if (0 == start_free) {
+        if (0 == start_free) {// heap空间不足，malloc失败
             int i;
             obj * volatile * my_free_list, *p;
+            // 试着检视我们手上拥有的东西。这不会造成伤害。我们不打算尝试配置
+            // 较小的区块，因为那在多进程机器上容易导致灾难，以下搜寻适当的free list
+            // 所谓适当是指“尚有未用区块，且区块够大”之free list， 所以i初始化为size，寻找的空间都是比现在申请的要大
             for (i = size; i <= __MAX_BYTES; i += ___ALIGN) {
                 my_free_list = free_list + FREELIST_INDEX(i);
                 p = *my_free_list;
-                if (0 != p) {
+                if (0 != p) {// free list尚有未用区块，调整free list以释出未用区块
                     *my_free_list = p -> free_list_link;
                     start_free = (char *)p;
                     end_free = start_free + i;
+                    // 递归调用自己，为了修正nobjs
                     return(chunk_alloc(size, nobjs));
+                    // 注意，任何残余零头终将被编入适当的free-list中备用
                 }
             }
-            end_free = 0;
-            start _free = (char *)malloc_alloc::allocate(bytes_to_get);
+            end_free = 0;// 现在内存真的是一滴都不剩了，下面调用一级配置器试试，至少它能抛出异常
+            start_free = (char *)malloc_alloc::allocate(bytes_to_get);// 也就是说，这行最后会终止程序，也不会往下执行了，相当于exit()
         }
-        heap_size += bytes_to_get;
-        end_free = start_free + bytes_to_get;
+        heap_size += bytes_to_get;// 如果能执行到这行，必然是正常分配到内存了，更新heap_size，虽然这个变量一直也没用上
+        end_free = start_free + bytes_to_get;// end_free也更新一下
+        // 递归调用自己，为了修正nobjs
         return(chunk_alloc(size, nobjs));
     }
 }
