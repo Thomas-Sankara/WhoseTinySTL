@@ -1,6 +1,9 @@
+template <typename T> class ListItem; // List里用ListItem了，先声明一下
+
 template <typename T>
 class List
 {
+public:
     void insert_front(T value);
     void insert_end(T value);
     void display(std::ostream &os = std::cout) const;
@@ -8,7 +11,7 @@ class List
 private:
     ListItem<T>* _end;
     ListItem<T>* _front;
-    long_size;
+    long _size;
 };
 
 template <typename T>
