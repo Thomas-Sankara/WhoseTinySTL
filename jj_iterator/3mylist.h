@@ -7,6 +7,9 @@ public:
     void insert_front(T value);
     void insert_end(T value);
     void display(std::ostream &os = std::cout) const;
+    // ... 显然，这里省略了front()和end()两个函数，样例程序执行时找不到了
+    ListItem<T>* front() const { return _front; }
+    ListItem<T>* end() const { return _end; }
 
 private:
     ListItem<T>* _end;
@@ -19,9 +22,8 @@ class ListItem
 {
 public:
     T value() const { return _value;}
-    ListItem* next() const { return _next; }
+    ListItem* next() const { return _next; } // primer e5 p587
     // ...
-private:
     T _value;
-    ListItem* _next;
+    ListItem* _next; // 在类模板自己的作用域中，我们可以直接使用模板名而不提供实参
 };

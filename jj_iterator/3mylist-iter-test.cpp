@@ -1,9 +1,12 @@
 #include <iostream>
+#include <algorithm>
 #include "3mylist-iter.h"
 
 using namespace std;
 
-
+// 以上引用和命名空间都是我自己加的，源码没提。还是报错，因为自己实现的iterator少函数实现
+// 然后在被stl原生的algorithm调用时露馅了。要么通过从iterator派生来解决，这和自己写stl的目的相悖
+// 上述派生方案在书里的3.5节，而完整的iterator实现在书里的3.6节,现在这段代码刚到3.2节
 int main()
 {
     List<int> mylist;
