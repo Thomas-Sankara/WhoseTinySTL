@@ -27,7 +27,7 @@ namespace WhoseTniySTL
     /*
 	** 萃取传入的T类型的类型特性
 	*/
-    template<class T> // p105
+    template<class T> // p105，认为非内置类型全都有用户自定义的constructor和destructor
     struct _type_traits
     {
         typedef _true_type this_dummy_member_must_be_first; // 提高对某些编译器的健壮性
@@ -39,7 +39,7 @@ namespace WhoseTniySTL
         typedef _false_type is_POD_type;
     };
 
-    template<>
+    template<> // stl在<stl_sonfig.h>中将__STL_TEMPLATE_NULL定义为template<>，我还是算了吧
     struct _type_traits<bool>
     {
         typedef _true_type has_trivial_default_constuctor;
