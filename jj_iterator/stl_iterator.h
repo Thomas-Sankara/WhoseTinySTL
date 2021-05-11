@@ -49,7 +49,7 @@ iterator_category(const Iterator&) {
 
 template <class Iterator>
 inline typename iterator_traits<Iterator>::difference_type*
-distance_type(const Iterator&) {
+difference_type(const Iterator&) { // 侯捷这里错写成distance_type了
     return static_cast<typename iterator_traits<Iterator>::difference_type*>(0);
 }
 
