@@ -7,11 +7,6 @@
 #include <cstdlib> // for exit()，书上是这么说的，但这里也没有exit()
 
 namespace WhoseTinySTL{
-
-    /*
-	**空间配置器，以字节数为单位分配。
-    **内部使用
-	*/
     class alloc{
     private:
         enum EAlign{ ALIGN = 8 }; // 小型区块的上调边界
