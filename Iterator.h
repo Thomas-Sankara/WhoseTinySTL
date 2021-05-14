@@ -93,11 +93,12 @@ namespace WhoseTinySTL{
         typedef const T&                    reference;
     };
 
+    // 下面这三个函数是用来获取一个迭代器的三个属性（相应型别）的
     template<class Iterator>
     inline typename iterator_traits<Iterator>::iterator_category
     iterator_category(const Iterator& It){
         typedef typename iterator_traits<Iterator>::iterator_category category;
-        return category;
+        return category();
     }
     template<class Iterator>
     inline typename iterator_traits<Iterator>::value_type*
