@@ -93,19 +93,21 @@ namespace WhoseTinySTL{
         typedef const T&                    reference;
     };
 
-    // 下面这三个函数是用来获取一个迭代器的三个属性（相应型别）的
+    // 书里原话：“这个函数可以很方便地决定某个迭代器的类型”，“决定”这个术语我从来没听说过
+    // 我猜是“确定”的意思。不过本来调iterator的成员使用很方便，为何非要用额外的函数呢？
+    // 所以下面这仨函数我没明白是干什么用的，上网查也没人提到过这仨函数，全都只提value_type成员。
     template<class Iterator>
     inline typename iterator_traits<Iterator>::iterator_category
     iterator_category(const Iterator& It){
         typedef typename iterator_traits<Iterator>::iterator_category category;
-        return category();
+        return category(); // 最开始的五个空tag类，这里生成并返回了他们的实例
     }
-    template<class Iterator>
+    template<class Iterator> // 这个就更迷了，返回的是value_type类型的空指针
     inline typename iterator_traits<Iterator>::value_type*
     value_type(const Iterator& It){
         return static_cast<typename iterator_traits<Iterator>::value_type*>(0);
     }
-    template<class Iterator>
+    template<class Iterator> // 返回的是difference_type类型的空指针
     inline typename iterator_traits<Iterator>::difference_type*
     difference_type(const Iterator& It){
         return static_cast<typename iterator_traits<Iterator>::difference_type*>(0);
