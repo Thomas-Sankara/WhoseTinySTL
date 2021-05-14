@@ -109,4 +109,6 @@ namespace WhoseTinySTL{
     difference_type(const Iterator& It){
         return static_cast<typename iterator_traits<Iterator>::difference_type*>(0);
     }
+}
+
 #endif
