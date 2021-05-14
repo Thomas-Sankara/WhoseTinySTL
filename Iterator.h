@@ -117,7 +117,7 @@ namespace WhoseTinySTL{
 // 他100页所说的设计原则，也不知道他是老老实实摘录的还是自己加了料。我看的这个版本的SGI STL：
 // https://github.com/karottc/sgi-stl 它的<stl_iterator_base.h>和我们写的iterator差不多。
 // 然后在这个头文件中，确实有distance和_distance以及advance和_advance。我也不知道该不该加了。
-// 我决定模仿项目作者的写法，把distance和advance都写到algorithm里，而不是iterator里。
+// 我决定模仿项目作者的写法，把distance和advance都写到Algorithm.h里，而不是iterator里。
 // 以下为这种设计思路在《STL源码剖析》里的详细阐述，在第100页下方的“总结”里：
 // 设计适当的相应型别（associated types），是迭代器的责任。设计适当的迭代器，则是容器的责任。
 // 唯容器本身，才知道该设计出怎样的迭代器来遍历自己，并执行迭代器该有的各种行为（前进、后退、取值、
