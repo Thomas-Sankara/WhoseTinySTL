@@ -3,12 +3,13 @@ class vector {
 public: // vector的嵌套型别定义
     typedef T               value_type;
     typedef value_type*     pointer;
-    typedef value_type*     iterator;
+    typedef value_type*     iterator; // 可以发现，vector的迭代器就是普通指针
     typedef value_type&     reference;
     typedef size_t          size_type;
     typedef ptrdiff_t       difference_type;
 
-protected:
+protected: // vector的数据结构是线性连续空间
+    // stl统一使用simple_alloc这个接口，书54页有，就是提供了四个函数的接口
     typedef simple_alloc<value_type, Alloc> data_allocator; // 空间配置器
     iterator start;             // 表示目前使用空间的头
     iterator finish;            // 表示目前使用空间的尾
@@ -20,7 +21,7 @@ protected:
             data_allocator::deallocate(start, end_of_storage - start);
     }
 
-    void fill_initialize(size_type n, const T& value) {
+    void fill_initialize(size_type n, const T& value) { // 填充并初始化
         start = allocate_and_fill(n, value);
         finish = start + n;
         end_of_storage = finish;
@@ -37,9 +38,9 @@ public:
     reference operator[](size_type n) { return *(begin() + n); }
 
     vector() : start(0), finish(0), end_of_storage(0) {};
-    vector(size_type n, const T& value) { fill_initialize(n , value); }
-    vector(int n, const T& value_type) { fill_initialize(n, value); }
-    vector(long n, const T& value_type) { fill_initialize(n, value); }
+    vector(size_type n, const T& value) { fill_initialize(n , value); } // vector大小n和初值value
+    vector(int n, const T& value) { fill_initialize(n, value); }
+    vector(long n, const T& value) { fill_initialize(n, value); }
     explicit vector(size_type n) { fill_initialize(n, T()); }
 
     ~vector() {
@@ -49,8 +50,8 @@ public:
     reference front() { return *begin(); }      // 第一个元素
     reference back() { return *(end() - 1); }   // 最后一个元素
     void push_back(const T& x) {                // 将元素插至最尾端
-        if (finish != end_of_storage) {
-            construct(finish, x);               // 全局函数
+        if (finish != end_of_storage) {         // 还有备用空间
+            construct(finish, x);               // 全局函数，51页
             ++finish;
         } else
             insert_aux(end(), x);               // vector的一个成员函数
@@ -79,8 +80,8 @@ public:
 
 protected:
     iterator allocate_and_fill(size_type n, const T& x) { // 配置空间并填满内容
-        iterator result = data_allocator::allocate(n);
-        uninitialized_fill_n(result, n, x); // 全局函数
+        iterator result = data_allocator::allocate(n); // 表示配置n个元素空间
+        uninitialized_fill_n(result, n, x); // 全局函数，书71页，内存管理函数之一
         return result;
     }
 }
