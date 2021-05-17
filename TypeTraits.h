@@ -40,7 +40,7 @@ namespace WhoseTniySTL
     };
 
     template<> // stl在<stl_sonfig.h>中将__STL_TEMPLATE_NULL定义为template<>，我还是算了吧
-    struct _type_traits<bool>
+    struct _type_traits<bool> // 特例化的类模板后面还可以加这样的模板参数列表
     {
         typedef _true_type has_trivial_default_constuctor;
         typedef _true_type has_trivial_copy_constructor;
@@ -49,7 +49,7 @@ namespace WhoseTniySTL
         typedef _true_type is_POD_type;
     };
 
-    template<>
+    template<> // 模板参数列表为空表示全特例化
     struct _type_traits<char>
     {
         typedef _true_type has_trivial_default_constuctor;
