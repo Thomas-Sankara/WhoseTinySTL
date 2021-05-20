@@ -1,3 +1,4 @@
+#define __STL_USE_EXCEPTIONS
 template <class T, class Alloc = alloc>
 class vector {
 public: // vector的嵌套型别定义
@@ -62,6 +63,12 @@ public:
         distroy(finish);    // 全局函数
     }
 
+    iterator erase(iterator first, iterator last){ // 清除[first,last)中的所有元素
+        iterator i = copy(last, finish, first); // 全局函数，但这个在第六章
+        destroy(i, finish);                     // 全局函数
+        finish = finish - (last - first);
+        return first;
+    }
     iterator erase(iterator position) { // 清除某位置上的元素
         if (position + 1 != end())
             copy(position + 1, finish, position); // 后续元素往前移动
@@ -122,6 +129,61 @@ void vector<T, Alloc>::insert_aux(iterator position, const T& x) {
         deallocate();
 
         // 调整迭代器，指向新vector
+        start = new_start;
+        finish = new_finish;
+        end_of_storage = new_start + len;
+    }
+}
+
+template <class T, class Alloc>
+void vector<T, Alloc>::insert(iterator position, size_type n, const T& x){
+    if (n!=0){ // 当n!=0才能进行以下所有操作
+        if(size_type(end_of_storage - finish) >= n){
+            // 备用空间大于等于“新增元素个数”
+            T x_copy = x;
+            // 以下计算插入点之后的现有元素个数
+            const size_type elems_after = finish - position;
+            iterator old_finish = finish;
+            if (elems_after > n){ // “插入点之后的现有元素个数”大于“新增元素个数”
+                uninitialized_copy(finish - n, finish, finish);
+                finish += n; // 将vector尾端标记后移
+                copy_backward(position, old_finish - n, old_finish);
+                fill(position, position + n, x_copy);
+            }else{ // “插入点之后的现有元素个数”小于等于“新增元素个数”
+                uninitialized_fill_n(finish, n - elems_after, x_copy); // 你可能疑惑为什么这么写？
+                finish += n - elems_after; // 为什么不在最后直接一个fill全填完而是先用一次fill_n?
+                uninitialized_copy(position, old_finish, finish); // 个人猜测是为了节省变量数量
+                finish += elems_after; // 且不在调用函数时使用fill(position,position+3,x_copy)这种写法
+                fill(position, old_finish, x_copy);
+            }
+        }else{
+            // 备用空间小于“新增元素个数”（那就必须配置额外的内存）
+            // 首先决定新长度：旧长度的两倍，或旧长度+新增元素个数
+            const size_type old_size = size();
+            const size_type len = old_size + max(old_size, n);
+            // 以下配置新的vector空间
+            iterator new_start = data_allocator::allocate(len);
+            iterator new_finish = new_start;
+            __STL_TRY{
+                // 以下首先将旧vector的插入点之前的元素复制到新空间
+                new_finish = uninitialized_copy(start, position, new_start);
+                // 以下再将新增元素（初值皆为n）填入新空间
+                new_finish = uninitialized_fill_n(new_finish, n, x);
+                // 以下再将旧vector的插入点之后的元素复制到新空间
+                new_finish = uninitialized_copy(position, finish, new_finish);
+            }
+        }
+        # ifdef __STL_USE_EXCEPTIONS
+            catch(...){ // 如有异常发生，实现“commit or rollback” semantics
+                destroy(new_start, new_finish);
+                data_allocator::deallocate(new_start, len);
+                throw;
+            }
+        # endif /* __STL_USE_EXCEPTIONS */
+        // 以下清除并释放旧的vector
+        destroy(start, finish);
+        deallocate();
+        // 以下调整水位标记
         start = new_start;
         finish = new_finish;
         end_of_storage = new_start + len;
