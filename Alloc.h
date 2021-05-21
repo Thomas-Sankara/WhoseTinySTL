@@ -8,6 +8,7 @@
 
 namespace WhoseTinySTL{
     class alloc{
+    
     private:
         enum EAlign{ ALIGN = 8 }; // 小型区块的上调边界
         enum EMaxBytes{ MAXBYTES = 128 }; // 小型区块的上限，超过的区块由malloc分配
