@@ -4,7 +4,7 @@
 主要参考对象是《STL源码剖析》第一版和https://github.com/zouxiaohang/TinySTL <br>
 次要参考对象是https://github.com/karottc/sgi-stl <br>
 为了尊重侯捷老师的习惯，我把非实现部分的练习代码都放入以jj开头的文件夹中😀 <br>
-大部分内容就是原封不动地照着参考对象撸了一遍，并在注释中补充了大量个人浅见和查阅资料 <br>
+绝大部分内容就是原封不动地照着参考对象撸了一遍，并在注释中补充了大量个人浅见和查阅资料 <br>
 下文中以及代码的注释中，”项目作者“指的就是[TinySTL的作者](https://github.com/zouxiaohang) ，“书”指的就是《STL源码剖析》 <br>
 
 ## 参考开源项目仿写微型STL的好处
