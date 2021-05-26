@@ -74,7 +74,7 @@ namespace WhoseTinySTL{
         typedef typename Iterator::pointer              pointer;
         typedef typename Iterator::reference            reference;
     };
-    template<class Iterator>
+    template<class T>
     struct iterator_traits<T*>
     {
         typedef random_access_iterator_tag  iterator_category;
@@ -83,7 +83,7 @@ namespace WhoseTinySTL{
         typedef T*                          pointer;
         typedef T&                          reference;
     };
-    template<class Iterator>
+    template<class T>
     struct iterator_traits<const T*>
     {
         typedef random_access_iterator_tag  iterator_category;

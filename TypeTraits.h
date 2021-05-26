@@ -3,7 +3,7 @@
 #ifndef _TYPE_TRAITS_H
 #define _TYPE_TRAITS_H
 
-namespace WhoseTniySTL
+namespace WhoseTinySTL
 {
     namespace{ // 未命名的命名空间，是c++用来代替文件的static变量的
         template<bool, class Ta, class Tb>

@@ -67,7 +67,7 @@ namespace WhoseTinySTL{
 	}
 	template <class InputIterator, class Distance> 
 	void advance(InputIterator& it, Distance n){
-		typedef iterator_traits<InputIterator>::iterator_category iterator_category;
+		typedef typename iterator_traits<InputIterator>::iterator_category iterator_category; // 作者这行少打了typename，不然是识别不出来这是类型的
 		_advance(it, n, iterator_category());
 	}
 }
