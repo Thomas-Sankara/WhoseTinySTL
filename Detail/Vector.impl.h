@@ -221,7 +221,7 @@ namespace WhoseTinySTL{
     void vector<T, Alloc>::shrink_to_fit(){
         T* t = (T*)dataAllocator::allocate(size());
         finish_ = WhoseTinySTL::uninitialized_copy(start_, finish_, t);
-        dataAllocator::deallocate(start_, capacity())
+        dataAllocator::deallocate(start_, capacity());
         start_ = t;
         endOfStorage_ = finish_;
     }
