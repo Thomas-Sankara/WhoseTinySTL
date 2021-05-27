@@ -77,6 +77,13 @@ namespace WhoseTinySTL{
         void reserve(size_type n);
         void shrink_to_fit(); // 这个东西从来没听说过
 
+        // 访问元素
+        reference operator[](const difference_type i){ return *(begin() + i); }
+        const_reference operator[](const difference_type i)const{ return *(cbegin() + i); }
+        reference front(){ return *(begin()); }
+        reference back(){ return *(end() - 1); }
+        pointer data(){ return start_; }
+
         // 修改容器
         void clear(); // 销毁所有容器内对象，size设为0，但不回收容器的空间
         //void swap(vector& v); // 还没实现，先注释掉

@@ -22,13 +22,15 @@ int main(){
     WhoseTinySTL::vector<string> a; // 类类型
     for(int i=0;i<5;i++) a.push_back(std::to_string(i));
     for(auto i=a.begin();i!=a.end();i++) cout << *i << ' ';
-    cout << endl << "string test finished" << endl << endl;
+    cout << endl << "random access " << a[2] << endl;
+    cout << "string test finished" << endl << endl;
 
     cout << "int test" << endl;
     WhoseTinySTL::vector<int> b; // 内置类型
-    for(int i=0;i<5;i++) b.push_back(i);
+    for(int i=5;i>0;i--) b.push_back(i);
     for(auto i=b.begin();i!=b.end();i++) cout << *i << ' ';
-    cout << endl << "int test finished" << endl << endl;
+    cout << endl << "random access " << b[2] << endl;
+    cout << "int test finished" << endl << endl;
 
     return 0;
 }
