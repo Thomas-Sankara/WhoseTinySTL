@@ -51,8 +51,8 @@ namespace WhoseTinySTL{
         return *this;
     }
     /********************************容量********************************/
-    template<class T, class Alloc>
-    void vector<T, Alloc>::resize(size_type n, value_type val = value_type()){
+    template<class T, class Alloc> // 下一行被我注释掉是因为这种默认参数要写到定义处，也就是Vector.h里
+    void vector<T, Alloc>::resize(size_type n, value_type val/* = value_type()*/){ // 写在这里会报错
         if(n < size()){
             dataAllocator::destroy(start_ + n, finish_);
         }else if(n > size() && n <= capacity()){
@@ -104,7 +104,7 @@ namespace WhoseTinySTL{
     void vector<T, Alloc>::reallocateAndCopy(iterator position, InputIterator first, InputIterator last){
         difference_type newCapacity = getNewCapacity(last - first);
 
-        T *newStart - dataAllocator::allocate(newCapacity);
+        T *newStart = dataAllocator::allocate(newCapacity);
         T *newEndOfStorage = newStart + newCapacity;
         T *newFinish = WhoseTinySTL::uninitialized_copy(begin(), position, newStart);
         newFinish = WhoseTinySTL::uninitialized_copy(first, last, newFinish);
@@ -230,14 +230,15 @@ namespace WhoseTinySTL{
         dataAllocator::destroy(start_, finish_);
         finish_ = start_;
     }
-    template<class T, class Alloc>
-    void vector<T, Alloc>::swqp(vector& v){
-        if(this != &v){
-            WhoseTinySTL::swap(start_, v.start_);
-            WhoseTinySTL::swap(finish_, v.finish_);
-            WhoseTinySTL::swap(endOfStorage, v.endOfStorage_);
-        }
-    }
+    // swap从c++11开始，就定义在utility.h里了，现在还没写，先注释掉
+    // template<class T, class Alloc>
+    // void vector<T, Alloc>::swap(vector& v){
+    //     if(this != &v){
+    //         WhoseTinySTL::swap(start_, v.start_);
+    //         WhoseTinySTL::swap(finish_, v.finish_);
+    //         WhoseTinySTL::swap(endOfStorage_, v.endOfStorage_);
+    //     }
+    // }
     template<class T, class Alloc>
     void vector<T, Alloc>::pop_back(){
         --finish_;
@@ -246,7 +247,7 @@ namespace WhoseTinySTL{
     template<class T, class Alloc>
     void vector<T, Alloc>::destroyAndDeallocateAll(){
         if(capacity() != 0){
-            dataAllocator::destroy*(start_, finish_);
+            dataAllocator::destroy(start_, finish_);
             dataAllocator::deallocate(start_, capacity());
         }
     }

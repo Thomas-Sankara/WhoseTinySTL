@@ -63,6 +63,7 @@ namespace WhoseTinySTL{
         iterator end(){ return (finish_); }
         const_iterator end()const{ return (finish_); }
         const_iterator cend()const{ return (finish_); }
+        //reverse_iterator还没实现，先把下面四行注释掉
         //reverse_iterator rbegin(){ return reverse_iterator(finish_); }
         //const_reverse_iterator crbegin()const{ return const_reverse_iterator(finish_); }
         //reverse_iterator rend(){ return reverse_iterator(start_); }
@@ -78,7 +79,7 @@ namespace WhoseTinySTL{
 
         // 修改容器
         void clear(); // 销毁所有容器内对象，size设为0，但不回收容器的空间
-        void swap(vector& v);
+        //void swap(vector& v); // 还没实现，先注释掉
         void push_back(const value_type& value);
         void pop_back();
         iterator insert(iterator position, const value_type& val);
@@ -88,8 +89,8 @@ namespace WhoseTinySTL{
         iterator erase(iterator position);
         iterator erase(iterator first, iterator last);
 
-        // 空间配置器
-        Alloc get_allocator(){ return dataAllocator; }
+        // 空间配置器，作者源码是 Alloc get_allocator(){ return dataAllocator; }
+        Alloc get_allocator(){ return dataAllocator(); } // 项目作者应该是写错了，不加()生成不了对象
     private:
         void destroyAndDeallocateAll();
         void allocateAndFillN(const size_type n, const value_type& value);
@@ -110,15 +111,26 @@ namespace WhoseTinySTL{
         size_type getNewCapacity(size_type len)const;
     public:
         // 项目作者应该是写错了。这些友元函数是想使用类模板的模板参数，那应该按如下格式使用。
-        friend bool operator==<T, Alloc>(const vector<T, Alloc>&, const vector<T, Alloc>&);
+        //friend bool operator==<T, Alloc>(const vector<T, Alloc>&, const vector<T, Alloc>&);
         // 同样的，Vector.impl.h里也要改过来。相关语法参考《C++ Primer》第五版589页。
-        friend bool operator!=<T, Alloc>(const vector<T, Alloc>&, const vector<T, Alloc>&);
-        // 但是会报错，疯狂查找，只有这个能通过，但不能用，下面这个需要把所有类型都重载一遍，还处理不了自定义类，不行：
+        //friend bool operator!=<T, Alloc>(const vector<T, Alloc>&, const vector<T, Alloc>&);
+        // 但是会报错，疯狂查找，只有下面这个能通过，但不能用。它需要把所有类型都重载一遍，还处理不了自定义类，不行：
         // https://bytes.com/topic/c/answers/134875-error-declaration-operator-non-function
         // 直接把实现写到vector里更好，啥错都没有，只是我想知道是咋回事。直接写到vector的例子在这里：
         // https://stackoverflow.com/questions/65337021/error-declaration-of-operator-as-non-function
+        // 上面的写法同样不行，得像下面这样写。下面这种写法，其实就是没有指定两个友元函数模板非要用类的模板参数。
+        // 而在编译时，vector会把自己的模板参数传给这两个友元函数模板，经过模板参数推导，使用了类的模板参数。
+        template<class _T, class _Alloc>
+        friend bool operator==(const vector<_T, _Alloc>&, const vector<_T, _Alloc>&);
+        template<class _T, class _Alloc>
+        friend bool operator!=(const vector<_T, _Alloc>&, const vector<_T, _Alloc>&);
+        // 经大佬推测，编译器在编译过程，很可能把vector的成员函数operator==和operator!=与vector的友元函数模板
+        // operator==和operator!=实例化出来的友元函数认为是相同的函数了，也就是发生了函数重定义错误。但是由于
+        // 涉及到了模板，报错要想显示你代码中的错误，最多就是指向你模板的代码，没法报出这么精准的实例化错误，所以
+        // 你看到的报错信息也挺离谱，编译器对着模板报什么non-function的错误
     };// end of class vector
 }
 
 #include "Detail/Vector.impl.h" //我在ubuntu下写的，所以路径分隔符是斜杠
+// 模板要求定义和实现在一个文件里，所以以往都是实现文件在一开头include定义文件，但是模板文件反了过来
 #endif

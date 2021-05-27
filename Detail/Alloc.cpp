@@ -91,6 +91,60 @@ namespace WhoseTinySTL{
 
     // 假设bytes应经上调为8的倍数了
     char *alloc::chunk_alloc(size_t bytes, size_t& nobjs) {
-        
+        char *result = 0;
+        size_t total_bytes = bytes * nobjs;
+        size_t bytes_left = end_free - start_free;
+
+        if (bytes_left >= total_bytes){ // 内存池剩余空间完全满足需要
+            result = start_free;
+            start_free = start_free + total_bytes;
+            return result;
+        }
+        else if (bytes_left >= bytes) { // 内存池剩余空间不能完全满足需要，但足够供应一个或以上的区块
+            nobjs = bytes_left / bytes;
+            total_bytes = nobjs * bytes;
+            result = start_free;
+            start_free += total_bytes;
+            return result;
+        } else { // 内存池剩余空间连一个区块的大小都无法提供
+            // ROUND_UP是附加量，多少都行，它起到一个“灵活扩容”的作用
+            size_t bytes_to_get = 2 * total_bytes + ROUND_UP(heap_size >> 4);
+            // 下面试着让内存池中的残余零头还有利用价值
+            if (bytes_left > 0) {
+                obj **my_free_list = free_list + FREELIST_INDEX(bytes_left);
+                // 调整free list，将内存池中的残余空间编入。担心最小的情况不够8bytes？
+                ((obj*)start_free)->next = *my_free_list; // 别担心，内存池生成时8就是最小单位
+                *my_free_list = (obj *)start_free; // 每次取用也是8的整数倍，所以有剩余空间时必然是8的整数倍，最小也是8bytes
+            } // 这步做完后，内存池就是空的了
+
+            // 配置heap空间，来补充内存池
+            start_free = (char *)malloc(bytes_to_get);
+            if (bytes_left > 0) { // heap空间不足，malloc失败
+                obj **my_free_list = 0, *p = 0;
+                // 试着检视我们手上拥有的东西。这不会造成伤害。我们不打算尝试配置
+                // 较小的区块，因为那在多进程机器上容易导致灾难，以下搜寻适当的free list
+                // 所谓适当是指“尚有未用区块，且区块够大”之free list， 所以i初始化为size，
+                // 寻找的空间都是比现在申请的要大
+                for (int i = 0; i <= EMaxBytes::MAXBYTES; i += EAlign::ALIGN) {
+                    my_free_list = free_list + FREELIST_INDEX(i);
+                    p = *my_free_list;
+                    if (p != 0) { // free list尚有未用区块，调整free list以释出未用区块
+                        *my_free_list = p->next;
+                        start_free = (char *)p;
+                        end_free = start_free + i;
+                        // 递归调用自己，为了修正nobjs
+                        return chunk_alloc(bytes, nobjs);
+                    } // 注意，任何残余零头终将被编入适当的free-list中备用
+                }
+                end_free = 0; // 现在内存真的是一滴都不剩了
+                // 侯捷的代码在下面调用一级配置器，用它能抛出内存不够的异常
+                // 但我们没有写带有处理异常机制的一级配置器，所以就不调了
+                //start_free = (char *)malloc_alloc::allocate(bytes_to_get);
+            }
+            // 如果能执行到这里，必然是正常分配到内存了，更新heap_size，虽然这个变量一直也没用上
+            heap_size += bytes_to_get; 
+            end_free = start_free + bytes_to_get; // end_free也更新一下
+            return chunk_alloc(bytes, nobjs); // 递归调用自己，为了修正nobjs
+        }
     }
 }

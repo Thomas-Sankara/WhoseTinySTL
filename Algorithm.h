@@ -70,6 +70,47 @@ namespace WhoseTinySTL{
 		typedef typename iterator_traits<InputIterator>::iterator_category iterator_category; // 作者这行少打了typename，不然是识别不出来这是类型的
 		_advance(it, n, iterator_category());
 	}
+	//*********** [min] ********************
+	//********* [Algorithm Complexity: O(1)] ****************
+	template <class T> 
+	const T& min(const T& a, const T& b){
+		return !(b < a) ? a : b;
+	}
+	template <class T, class Compare>
+	const T& min(const T& a, const T& b, Compare comp){
+		return !comp(b, a) ? a : b;
+	}
+	//*********** [max] ********************
+	//********* [Algorithm Complexity: O(1)] ****************
+	template <class T> 
+	const T& max(const T& a, const T& b){
+		return (a < b) ? b : a;
+	}
+	template <class T, class Compare>
+	const T& max(const T& a, const T& b, Compare comp){
+		return (comp(a, b)) ? b : a; // 作者源码是copm，应该是只是打错字了，我就自己改过来了
+	}
+	//********* [fill_n] ********************
+	//********* [Algorithm Complexity: O(N)] ****************
+	template<class OutputIterator, class Size, class T>
+	OutputIterator fill_n(OutputIterator first, Size n, const T& value)
+	{
+		for (; n > 0; --n, ++first)
+			*first = value;
+		return first;
+	}
+	template<class Size>
+	char *fill_n(char *first, Size n, const char& value)
+	{
+		memset(first, static_cast<unsigned char>(value), n);
+		return first + n;
+	}
+	template<class Size>
+	wchar_t *fill_n(wchar_t *first, Size n, const wchar_t& value)
+	{
+		memset(first, static_cast<unsigned char>(value), n * sizeof(wchar_t));
+		return first + n;
+	}
 }
 
 #endif
