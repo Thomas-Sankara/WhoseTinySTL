@@ -22,31 +22,32 @@ namespace WhoseTinySTL{
         vector_aux(first, last, typename std::is_integral<InputIterator>::type());
     }
     template<class T, class Alloc>
-    vector<T, Alloc>::vector(const vector& v){
-        allocateAndFillN(v.start_, v.finish_);
+    vector<T, Alloc>::vector(const vector& v){ // 拷贝构造
+        allocateAndCopy(v.start_, v.finish_);
     }
-    template<class T, class Alloc>
-    vector<T, Alloc>::vector(vector&& v){
+    template<class T, class Alloc> // noexcept见《c++ primer》e5 p473
+    vector<T, Alloc>::vector(vector&& v) noexcept { // 移动构造，其实是在调用移动赋值运算符
         start_ = v.start_;
         finish_ = v.finish_;
         endOfStorage_ = v.endOfStorage_;
-        v.start_ = v.finish_ = v.endOfStorage_ = 0;
+        v.start_ = v.finish_ = v.endOfStorage_ = nullptr; // 安全！
     }
     template<class T, class Alloc>
-    vector<T, Alloc>& vector<T, Alloc>::operator = (const vector& v){
-        if (this != &v){
+    vector<T, Alloc>& vector<T, Alloc>::operator = (const vector& v){ // 拷贝赋值运算符
+        if (this != &v){ // 项目作者的issue里有人反映，拷贝赋值过程没有析构原对象并释放空间
+            destroyAndDeallocateAll(); // 这里加上一句析构并释放空间，防止内存泄漏
             allocateAndCopy(v.start_, v.finish_);
         }
         return *this;
     }
     template<class T, class Alloc>
-    vector<T, Alloc>& vector<T, Alloc>::operator = (vector&& v){
+    vector<T, Alloc>& vector<T, Alloc>::operator = (vector&& v) noexcept { // 移动赋值运算符
         if(this != &v){
             destroyAndDeallocateAll();
             start_ = v.start_;
             finish_ = v.finish_;
             endOfStorage_ = v.endOfStorage_;
-            v.start_ = v.finish_ = v.endOfStorage_ = 0;
+            v.start_ = v.finish_ = v.endOfStorage_ = nullptr; // 安全！
         }
         return *this;
     }

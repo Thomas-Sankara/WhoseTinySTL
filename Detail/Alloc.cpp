@@ -90,7 +90,7 @@ namespace WhoseTinySTL{
     }
 
     // 假设bytes应经上调为8的倍数了
-    char *alloc::chunk_alloc(size_t bytes, size_t& nobjs) {
+    char *alloc::chunk_alloc(size_t bytes, size_t& nobjs) { // bytes代表要申请的一块的大小
         char *result = 0;
         size_t total_bytes = bytes * nobjs;
         size_t bytes_left = end_free - start_free;
@@ -101,7 +101,7 @@ namespace WhoseTinySTL{
             return result;
         }
         else if (bytes_left >= bytes) { // 内存池剩余空间不能完全满足需要，但足够供应一个或以上的区块
-            nobjs = bytes_left / bytes;
+            nobjs = bytes_left / bytes; // 传引用的好处在这里，可以修改nobjs的值
             total_bytes = nobjs * bytes;
             result = start_free;
             start_free += total_bytes;
@@ -110,7 +110,7 @@ namespace WhoseTinySTL{
             // ROUND_UP是附加量，多少都行，它起到一个“灵活扩容”的作用
             size_t bytes_to_get = 2 * total_bytes + ROUND_UP(heap_size >> 4);
             // 下面试着让内存池中的残余零头还有利用价值
-            if (bytes_left > 0) {
+            if (bytes_left > 0) { // my_free_list是指向指针的指针，所以它的内容是指针（地址）
                 obj **my_free_list = free_list + FREELIST_INDEX(bytes_left);
                 // 调整free list，将内存池中的残余空间编入。担心最小的情况不够8bytes？
                 ((obj*)start_free)->next = *my_free_list; // 别担心，内存池生成时8就是最小单位
@@ -119,13 +119,17 @@ namespace WhoseTinySTL{
 
             // 配置heap空间，来补充内存池
             start_free = (char *)malloc(bytes_to_get);
-            if (bytes_left > 0) { // heap空间不足，malloc失败
-                obj **my_free_list = 0, *p = 0;
-                // 试着检视我们手上拥有的东西。这不会造成伤害。我们不打算尝试配置
-                // 较小的区块，因为那在多进程机器上容易导致灾难，以下搜寻适当的free list
+            if (!start_free) { // heap空间不足，malloc失败，此时start_free应为空指针
+                obj **my_free_list = nullptr, *p = nullptr;
+                // 试着检视我们手上拥有的东西。这不会造成伤害。我们不打算尝试配置较小的区块，
+                // 因为那在多进程机器上容易导致灾难，以下搜寻适当的free list
                 // 所谓适当是指“尚有未用区块，且区块够大”之free list， 所以i初始化为size，
-                // 寻找的空间都是比现在申请的要大
-                for (int i = 0; i <= EMaxBytes::MAXBYTES; i += EAlign::ALIGN) {
+                // 寻找的空间都比现在申请的要大，循环应从bytes这个大小的后一个大小的区块开始找起,
+                // 因为就是bytes大小的区块不够用了，要从“更大的”区块给它补充。
+                // 项目作者下面这行的i初始化为0，但issue里有人指出，应当从bytes开始，
+                // 我则认为该从它的后一个开始找起，也就是从bytes + EAlign::ALIGN找起，详情见：
+                // https://github.com/zouxiaohang/TinySTL/issues/16
+                for (int i = bytes + EAlign::ALIGN; i <= EMaxBytes::MAXBYTES; i += EAlign::ALIGN) {
                     my_free_list = free_list + FREELIST_INDEX(i);
                     p = *my_free_list;
                     if (p != 0) { // free list尚有未用区块，调整free list以释出未用区块
@@ -137,8 +141,10 @@ namespace WhoseTinySTL{
                     } // 注意，任何残余零头终将被编入适当的free-list中备用
                 }
                 end_free = 0; // 现在内存真的是一滴都不剩了
-                // 侯捷的代码在下面调用一级配置器，用它能抛出内存不够的异常
-                // 但我们没有写带有处理异常机制的一级配置器，所以就不调了
+                // 下面这行代码是侯捷的代码，它调用了一级配置器，用它能抛出内存不够的异常
+                // 但我们没有写带有异常处理机制的一级配置器，就不调了，这就是我在readme里说的：
+                // 这对于你了解STL的整体、核心实现思路并不重要，可以暂时忽略。
+                // 所以如果真的发生了所有可用内存都被用光的情况就会发生无限循环，因为没有异常处理
                 //start_free = (char *)malloc_alloc::allocate(bytes_to_get);
             }
             // 如果能执行到这里，必然是正常分配到内存了，更新heap_size，虽然这个变量一直也没用上

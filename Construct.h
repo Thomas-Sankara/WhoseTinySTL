@@ -33,9 +33,9 @@ namespace WhoseTinySTL{
 
     template<class ForwardIterator> // 这种destroy显然是针对删除两个迭代器间所有对象的
     inline void destroy(ForwardIterator first, ForwardIterator last){
-        // 下面这行是作者源码，有人说写错了https://github.com/zouxiaohang/TinySTL/issues/29
+        // 下面这行是作者源码，三四个人都说写错了https://github.com/zouxiaohang/TinySTL/issues/29
         //typedef typename _type_traits<ForwardIterator>::is_POD_type is_POD_type;
-        // 我同意他的看法，就自己改了。这个typename的问题在UninitializedFunctions.h里就出现过，要小心。
+        // 我同意他们的看法，就自己改了。这个typename的问题在UninitializedFunctions.h里就出现过，要小心。
         typedef typename _type_traits<typename iterator_traits<ForwardIterator>::value_type>::is_POD_type is_POD_type;
         _destroy(first, last, is_POD_type());
     }
