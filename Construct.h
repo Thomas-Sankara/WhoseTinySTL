@@ -5,6 +5,7 @@
 
 #ifndef _CONSTRUCT_H_
 #define _CONSTRUCT_H_
+#include <iostream> // 测试使用
 
 #include <new> // new有特殊版本，可以在已申请好的内存空间上只构造对象而不再申请空间
 #include "TypeTraits.h"
@@ -28,7 +29,7 @@ namespace WhoseTinySTL{
     inline void _destroy(ForwardIterator first, ForwardIterator last, _false_type){
         for (; first != last; ++first){
             destroy(&*first); // &*这个操作是在把iterator迭代器的内容地址转成普通指针
-        }
+        } // 括号内的转换完成后，就调用了上面的普通指针的destroy
     }
 
     template<class ForwardIterator> // 这种destroy显然是针对删除两个迭代器间所有对象的

@@ -3,7 +3,7 @@
 #ifndef _UNINITIALIZED_FUNCTIONS_H_
 #define _UNINITIALIZED_FUNCTIONS_H_
 
-#include "Algorithm.h" // 我怀疑是因为项目作者的iterator的两个操作函数写在这里导致得include它
+#include "Algorithm.h" // fill()，fill_n()都是Algorithm.h里的
 #include "Construct.h"
 #include "Iterator.h"
 #include "TypeTraits.h"

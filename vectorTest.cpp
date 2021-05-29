@@ -18,19 +18,39 @@ using std::endl;
 using std::string;
 
 int main(){
-    cout << "string test" << endl;
+    cout << "a:string test" << endl;
     WhoseTinySTL::vector<string> a; // 类类型
     for(int i=0;i<5;i++) a.push_back(std::to_string(i));
     for(auto i=a.begin();i!=a.end();i++) cout << *i << ' ';
     cout << endl << "random access " << a[2] << endl;
     cout << "string test finished" << endl << endl;
 
-    cout << "int test" << endl;
+    cout << "b:int test" << endl;
     WhoseTinySTL::vector<int> b; // 内置类型
     for(int i=5;i>0;i--) b.push_back(i);
     for(auto i=b.begin();i!=b.end();i++) cout << *i << ' ';
     cout << endl << "random access " << b[2] << endl;
     cout << "int test finished" << endl << endl;
+
+    cout << "c:copy test" << endl;
+    WhoseTinySTL::vector<string> c = a; // 拷贝构造
+    for(auto i=c.begin();i!=c.end();i++) cout << *i << ' ';
+    cout << "int test finished" << endl << endl;
+
+    cout << "d:move test" << endl;
+    WhoseTinySTL::vector<int> d = std::move(b); // 移动构造
+    for(auto i=d.begin();i!=d.end();i++) cout << *i << ' ';
+    cout << "int test finished" << endl << endl;
+//！！！！！！！！！！！！！下面不要拿b写样例了！它已经被移动构造弄没了！！！！！！！！！！！！！
+    cout << "erase test" << endl;
+    a.erase(a.begin()+1);
+    cout << "a:the element with the index 1 has been erased" << endl;
+    for(auto i=a.begin();i!=a.end();i++) cout << *i << ' ';
+    d.erase(d.begin(),d.end()-1);
+    cout  << endl << "d:the element from the index 0 to the index size-1 has been erased" << endl;
+    for(auto i=d.begin();i!=d.end();i++) cout << *i << ' ';
+    cout << endl << "erase test finished" << endl << endl;
+
 
     return 0;
 }

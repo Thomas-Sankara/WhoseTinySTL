@@ -10,6 +10,7 @@
 #include "TypeTraits.h"
 //#include "Utility.h"//还没写，先注释掉
 
+// 已验证，项目作者的copy实现有问题，得自己写，书第六章再说，先用STL的
 namespace WhoseTinySTL{
     //********** [distance] ******************************
 	//********* [Algorithm Complexity: O(N)] ****************
@@ -89,6 +90,22 @@ namespace WhoseTinySTL{
 	template <class T, class Compare>
 	const T& max(const T& a, const T& b, Compare comp){
 		return (comp(a, b)) ? b : a; // 作者源码是copm，应该是只是打错字了，我就自己改过来了
+	}
+	//********* [fill] ********************
+	//********* [Algorithm Complexity: O(N)] ****************
+	template<class ForwardIterator, class T>
+	void fill(ForwardIterator first, ForwardIterator last, const T& value)
+	{
+		for (; first != last; ++first)
+			*first = value;
+	}
+	inline void fill(char *first, char *last, const char& value)
+	{
+		memset(first, static_cast<unsigned char>(value), last - first);
+	}
+	inline void fill(wchar_t *first, wchar_t *last, const wchar_t& value)
+	{
+		memset(first, static_cast<unsigned char>(value), (last - first) * sizeof(wchar_t));
 	}
 	//********* [fill_n] ********************
 	//********* [Algorithm Complexity: O(N)] ****************

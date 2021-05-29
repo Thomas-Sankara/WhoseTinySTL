@@ -5,7 +5,8 @@
 #include <type_traits> // 我不明白自己已经实现了type_traits为啥不用自己的
 
 #include "Allocator.h"
-#include "Algorithm.h" // 我怀疑是因为项目作者的iterator的两个操作函数写在这里导致得include它
+#include "Algorithm.h"
+#include <algorithm> // copy()是Algorithm.h里的，实现里用到了，项目作者的有bug，先用STL的
 #include "Iterator.h"
 //#include "ReverseIterator.h"//还没写，先注释掉
 #include "UninitializedFunctions.h"
@@ -41,15 +42,15 @@ namespace WhoseTinySTL{
         typedef ptrdiff_t                       difference_type;
     public:
         // 构造，拷贝构造，移动构造，拷贝赋值运算符，移动赋值运算符，析构函数
-        vector():start_(0), finish_(0), endOfStorage_(0){}
+        vector():start_(nullptr), finish_(nullptr), endOfStorage_(nullptr){}
         explicit vector(const size_type n);
         vector(const size_type n, const value_type& value);
         template<class InputIterator>
         vector(InputIterator first, InputIterator last);
         vector(const vector& v);
-        vector(vector&& v);
+        vector(vector&& v) noexcept; // 别忘了声明也要带上noexcept关键字
         vector& operator =(const vector& v);
-        vector& operator =(vector&& v);
+        vector& operator =(vector&& v) noexcept; // 别忘了声明也要带上noexcept关键字
         ~vector();
 
         // 比较运算符
@@ -73,11 +74,11 @@ namespace WhoseTinySTL{
         difference_type size()const{ return finish_ - start_; }
         difference_type capacity()const{ return endOfStorage_ - start_; }
         bool empty()const{ return start_ == finish_; }
-        void resize(size_type n, value_type val = value_type());
-        void reserve(size_type n);
-        void shrink_to_fit(); // 这个东西从来没听说过
+        void resize(size_type n, value_type val = value_type());//《C++ Primer》e5 p314
+        void reserve(size_type n); // 分配至少能容纳n个元素的空间，《C++ Primer》e5 p318
+        void shrink_to_fit(); // 别说你不知道嗷，《C++ Primer》e5 p318
 
-        // 访问元素
+        // 访问元素，《C++ Primer》e5 p501，下标运算符定义时通常都要常量、非常量版本一起定义。
         reference operator[](const difference_type i){ return *(begin() + i); }
         const_reference operator[](const difference_type i)const{ return *(cbegin() + i); }
         reference front(){ return *(begin()); }
@@ -104,7 +105,7 @@ namespace WhoseTinySTL{
         template<class InputIterator>
         void allocateAndCopy(InputIterator first, InputIterator last);
 
-        template<class InputIterator>
+        template<class InputIterator> // tips:aux是Auxiliary（辅助）的首字母
         void vector_aux(InputIterator first, InputIterator last, std::false_type);
         template<class Integer>
         void vector_aux(Integer n, const value_type& value, std::true_type);
@@ -134,7 +135,10 @@ namespace WhoseTinySTL{
         // 经大佬推测，编译器在编译过程，很可能把vector的成员函数operator==和operator!=与vector的友元函数模板
         // operator==和operator!=实例化出来的友元函数认为是相同的函数了，也就是发生了函数重定义错误。但是由于
         // 涉及到了模板，报错要想显示你代码中的错误，最多就是指向你模板的代码，没法报出这么精准的实例化错误，所以
-        // 你看到的报错信息也挺离谱，编译器对着模板报什么non-function的错误
+        // 你看到的报错信息也挺离谱，编译器对着模板报什么non-function的错误。大佬做这种推测的理由之一是：
+        // 把vector内的两个比较运算符注释掉——当然，由于友元函数的实现就是调用vector的比较运算符，也得随便改改内容，
+        // 不调用vector内的比较运算符就行——然后使用《C++ Primer》589页推荐的写法，也就是上面我注释掉的那两个行，
+        // 最后是能通过编译并正常运行，并不会报错。这就是友元函数模板实例化与成员函数冲突的一个佐证.
     };// end of class vector
 }
 

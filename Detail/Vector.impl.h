@@ -1,5 +1,6 @@
 #ifndef _VECTOR_IMPL_H_
 #define _VECTOR_IMPL_H_
+#include <iostream> // 用于测试
 
 namespace WhoseTinySTL{
     /*********构造，拷贝构造，移动构造，拷贝赋值运算符，移动赋值运算符，析构函数*********/
@@ -18,7 +19,9 @@ namespace WhoseTinySTL{
     template<class T, class Alloc>
     template<class InputIterator>
     vector<T, Alloc>::vector(InputIterator first, InputIterator last){
-        // 处理指针和数字间的区别的函数
+        // 处理指针和数字间的区别的函数。作者虽然这么写了，但是似乎有更规范的写法，我记录如下：
+        // vector_aux(first, last, std::is_integral<InputIterator>::value);
+        // 成员value就是一个true对象，而且一般来说，value是个给用户用的接口，应该用它。
         vector_aux(first, last, typename std::is_integral<InputIterator>::type());
     }
     template<class T, class Alloc>
@@ -52,14 +55,14 @@ namespace WhoseTinySTL{
         return *this;
     }
     /********************************容量********************************/
-    template<class T, class Alloc> // 下一行被我注释掉是因为这种默认参数要写到定义处，也就是Vector.h里
+    template<class T, class Alloc> // 下一行被我注释的部分是因为默认参数要写到定义处，也就是Vector.h里
     void vector<T, Alloc>::resize(size_type n, value_type val/* = value_type()*/){ // 写在这里会报错
-        if(n < size()){
+        if(n < size()){ // 删掉n后面的
             dataAllocator::destroy(start_ + n, finish_);
-        }else if(n > size() && n <= capacity()){
-            auto lengthOfInsert = n - size();
+        }else if(n > size() && n <= capacity()){ // 用val填充size()到n
+            auto lengthOfInsert = n - size(); // 没有删东西是因为resize改的是size，不是capcity
             finish_ = WhoseTinySTL::uninitialized_fill_n(finish_, lengthOfInsert, val);
-        }else if(n > capacity()){
+        }else if(n > capacity()){ // n比capacity还大，直接重开一块新的，复制，再用val填充
             auto lengthOfInsert = n - size();
             T *newStart = dataAllocator::allocate(getNewCapacity(lengthOfInsert));
             T *newFinish = WhoseTinySTL::uninitialized_copy(begin(), end(), newStart);
@@ -72,7 +75,7 @@ namespace WhoseTinySTL{
         }
     }
     template<class T, class Alloc>
-    void vector<T, Alloc>::reserve(size_type n){
+    void vector<T, Alloc>::reserve(size_type n){ // 分配至少能容纳n个元素的空间
         if(n <= capacity()) return;
         T *newStart = dataAllocator::allocate(n);
         T *newFinish = WhoseTinySTL::uninitialized_copy(begin(), end(), newStart);
@@ -83,22 +86,23 @@ namespace WhoseTinySTL{
         endOfStorage_ = start_ + n;
     }
     /********************************修改容器********************************/
-    template<class T, class Alloc>
+    template<class T, class Alloc> // 项目作者直接调用另一个版本的erase了，我老老实实地照着侯捷的实现了
     typename vector<T, Alloc>::iterator vector<T, Alloc>::erase(iterator position){
-        return erase(position, position + 1);
+        if(position + 1 != end()) copy(position + 1, finish_, position);
+        --finish_;
+        destroy(finish_);
+        return position;
     }
     template<class T, class Alloc>
     typename vector<T, Alloc>::iterator vector<T, Alloc>::erase(iterator first, iterator last){
-        // 尾部残留对象数
-        difference_type lenOfTail = end() - last;
-        // 删去的对象数目
-        difference_type lenOfRemoved = last - first;
-        finish_ = finish_ - lenOfRemoved;
-        for(; lenOfTail != 0; --lenOfTail){
-            auto temp = (last - lenOfRemoved);
-            *temp = *(last++);
-        }
-        return (first);
+        // 项目作者并没有按STL源码的方式实现（至少和侯捷说的思路不一样），我认为他自己的实现方式也有问题
+        // 他把要删的部分后面的元素从要删的位置开始逐个填充，_finish指针也在一开始就移动好了，但是问题是
+        // 他只把所有的元素都向前移动了，但是处在原位置末尾的last-first个元素他并没有进行析构。
+        // 我下面的代码是基于《STL源码剖析》第123页的内容实现的。
+        auto i = std::copy(last, finish_, first); // copy返回的是copy结束后的尾后迭代器
+        destroy(i, finish_); // 析构掉所有i之后的元素
+        finish_ = finish_ - (last - first); // finish_前移
+        return first;
     }
     template<class T, class Alloc>
     template<class InputIterator>
