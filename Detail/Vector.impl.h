@@ -1,6 +1,5 @@
 #ifndef _VECTOR_IMPL_H_
 #define _VECTOR_IMPL_H_
-#include <iostream> // 用于测试
 
 namespace WhoseTinySTL{
     /*********构造，拷贝构造，移动构造，拷贝赋值运算符，移动赋值运算符，析构函数*********/
@@ -19,7 +18,7 @@ namespace WhoseTinySTL{
     template<class T, class Alloc>
     template<class InputIterator>
     vector<T, Alloc>::vector(InputIterator first, InputIterator last){
-        // 处理指针和数字间的区别的函数。作者虽然这么写了，但是似乎有更规范的写法，我记录如下：
+        // 似乎有更规范的写法，我记录如下：
         // vector_aux(first, last, std::is_integral<InputIterator>::value);
         // 成员value就是一个true对象，而且一般来说，value是个给用户用的接口，应该用它。
         vector_aux(first, last, typename std::is_integral<InputIterator>::type());
@@ -105,7 +104,7 @@ namespace WhoseTinySTL{
         return first;
     }
     template<class T, class Alloc>
-    template<class InputIterator>
+    template<class InputIterator> // 该函数被insert(position,first,last)调用，用来在position处插入迭代器first和last中间的内容
     void vector<T, Alloc>::reallocateAndCopy(iterator position, InputIterator first, InputIterator last){
         difference_type newCapacity = getNewCapacity(last - first);
 
@@ -120,15 +119,15 @@ namespace WhoseTinySTL{
         finish_ = newFinish;
         endOfStorage_ = newEndOfStorage;
     }
-    template<class T, class Alloc>
+    template<class T, class Alloc> // 该函数被insert(position,n,val)调用，用来在position处插入n个val
     void vector<T, Alloc>::reallocateAndFillN(iterator position, const size_type& n, const value_type& val){
         difference_type newCapacity = getNewCapacity(n);
 
         T *newStart = dataAllocator::allocate(newCapacity);
         T *newEndOfStorage = newStart + newCapacity;
-        T *newFinish = WhoseTinySTL::uninitialized_copy(begin(), position, newStart);
-        newFinish = WhoseTinySTL::uninitialized_fill_n(newFinish, n, val);
-        newFinish = WhoseTinySTL::uninitialized_copy(position, end(), newFinish);
+        T *newFinish = WhoseTinySTL::uninitialized_copy(begin(), position, newStart); // 把原来的position前的粘到newStart前
+        newFinish = WhoseTinySTL::uninitialized_fill_n(newFinish, n, val); // 在用newStart申请的新空间填充n个val
+        newFinish = WhoseTinySTL::uninitialized_copy(position, end(), newFinish); // 把原来的position后的粘到newFinish后
 
         destroyAndDeallocateAll();
         start_ = newStart;
@@ -139,7 +138,7 @@ namespace WhoseTinySTL{
     template<class InputIterator>
     void vector<T, Alloc>::insert_aux(iterator position, InputIterator first, InputIterator last, std::false_type){
         difference_type locationLeft = endOfStorage_ - finish_;
-        difference_type locationNeed = distance(first, last);
+        difference_type locationNeed = WhoseTinySTL::distance(first, last); // iostream或algorithm里可能引入了标准库，distance和标准库的冲突了，得加命名空间
 
         if(locationLeft >= locationNeed){
             if(finish_ - position > locationNeed){
@@ -181,7 +180,7 @@ namespace WhoseTinySTL{
         insert_aux(position, first, last, typename std::is_integral<InputIterator>::type());
     }
     template<class T, class Alloc>
-    void vector<T, Alloc>::insert(iterator position, const size_type& n, const value_type& val){
+    void vector<T, Alloc>::insert(iterator position, const size_type n, const value_type& val){
         insert_aux(position, n, val, typename std::is_integral<size_type>::type());
     }
     template<class T, class Alloc>

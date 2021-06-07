@@ -35,14 +35,23 @@ int main(){
     cout << "c:copy test" << endl;
     WhoseTinySTL::vector<string> c = a; // 拷贝构造
     for(auto i=c.begin();i!=c.end();i++) cout << *i << ' ';
-    cout << "int test finished" << endl << endl;
+    cout << endl << "copy test finished" << endl << endl;
 
     cout << "d:move test" << endl;
     WhoseTinySTL::vector<int> d = std::move(b); // 移动构造
     for(auto i=d.begin();i!=d.end();i++) cout << *i << ' ';
-    cout << "int test finished" << endl << endl;
+    cout << endl << "move test finished" << endl << endl;
 //！！！！！！！！！！！！！下面不要拿b写样例了！它已经被移动构造弄没了！！！！！！！！！！！！！
-    cout << "erase test" << endl;
+    cout << "e,f:construct overload test" << endl;
+    WhoseTinySTL::vector<int> e(2,3);
+    WhoseTinySTL::vector<int> f(d.begin(),d.end());
+    cout << "e" << endl;
+    for(auto i=e.begin();i!=e.end();i++) cout << *i << ' ';
+    cout << endl << "f" << endl;
+    for(auto i=f.begin();i!=f.end();i++) cout << *i << ' ';
+    cout << endl << "overload test finished" << endl << endl;
+
+    cout << "a:erase test" << endl;
     a.erase(a.begin()+1);
     cout << "a:the element with the index 1 has been erased" << endl;
     for(auto i=a.begin();i!=a.end();i++) cout << *i << ' ';
@@ -51,6 +60,11 @@ int main(){
     for(auto i=d.begin();i!=d.end();i++) cout << *i << ' ';
     cout << endl << "erase test finished" << endl << endl;
 
+    cout << "c:insert test" << endl;
+    c.insert(c.begin(),2,"3");
+    c.insert(c.begin(),a.begin(),a.end());
+    for(auto i=c.begin();i!=c.end();i++) cout << *i << ' '; // a在erase测试中被删掉了"1"，所以本测试输出为
+    cout << endl << "insert test finished" << endl << endl; // 0 2 3 4 3 3 0 1 2 3 4
 
     return 0;
 }
