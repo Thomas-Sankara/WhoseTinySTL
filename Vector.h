@@ -1,7 +1,6 @@
 #ifndef _VECTOR_H_
 #define _VECTOR_H_
 
-#include <algorithm> // 我不明白include它有啥用
 #include <type_traits> // 我不明白自己已经实现了type_traits为啥不用自己的
 
 #include "Allocator.h"
@@ -91,7 +90,7 @@ namespace WhoseTinySTL{
         void push_back(const value_type& value);
         void pop_back();
         iterator insert(iterator position, const value_type& val);
-        void insert(iterator position, const size_type& n, const value_type& val);
+        void insert(iterator position, const size_type n, const value_type& val);
         template <class InputIterator>
         void insert(iterator position, InputIterator first, InputIterator last);
         iterator erase(iterator position);
