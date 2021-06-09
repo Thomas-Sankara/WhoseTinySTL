@@ -20,7 +20,11 @@ namespace WhoseTinySTL{
     vector<T, Alloc>::vector(InputIterator first, InputIterator last){
         // 似乎有更规范的写法，我记录如下：
         // vector_aux(first, last, std::is_integral<InputIterator>::value);
-        // 成员value就是一个true对象，而且一般来说，value是个给用户用的接口，应该用它。
+        // 不对，作者没写错，stl的<type_traits>里是这么写的：
+        // typedef std::integral_constant<bool, true> std::true_type;
+        // typedef std::integral_constant<bool, false> std::false_type;
+        // 而std::is_integral里面的定义是这样的：typedef std::integral_constant<bool, value> type
+        // std::is_integral<T>::value则是内置的true对象，而不是true_type这个空的stl类。
         vector_aux(first, last, typename std::is_integral<InputIterator>::type());
     }
     template<class T, class Alloc>

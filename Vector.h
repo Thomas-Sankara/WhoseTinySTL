@@ -1,8 +1,7 @@
 #ifndef _VECTOR_H_
 #define _VECTOR_H_
-
-#include <type_traits> // 我不明白自己已经实现了type_traits为啥不用自己的
-
+// 项目作者的type_traits可以用于简单的类型萃取。但实际上，stl里还有更复杂的与萃取相关的函数，比如在vector的实现里调用的std::is_integral<InputIterator>::type。
+#include <type_traits> // 这种复杂的功能还有很多，它们能和stl的type_traits里的类型配套使用，自己写的_true_type和_false_type自然就不行了。这种复杂程度的萃取不是我们的重点，这里就借用一下。
 #include "Allocator.h"
 #include "Algorithm.h"
 #include <algorithm> // copy()是Algorithm.h里的，实现里用到了，项目作者的有bug，先用STL的
