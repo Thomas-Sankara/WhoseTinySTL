@@ -123,21 +123,6 @@ namespace WhoseTinySTL{
         finish_ = newFinish;
         endOfStorage_ = newEndOfStorage;
     }
-    template<class T, class Alloc> // 该函数被insert(position,n,val)调用，用来在position处插入n个val
-    void vector<T, Alloc>::reallocateAndFillN(iterator position, const size_type& n, const value_type& val){
-        difference_type newCapacity = getNewCapacity(n);
-
-        T *newStart = dataAllocator::allocate(newCapacity);
-        T *newEndOfStorage = newStart + newCapacity;
-        T *newFinish = WhoseTinySTL::uninitialized_copy(begin(), position, newStart); // 把原来的position前的粘到newStart前
-        newFinish = WhoseTinySTL::uninitialized_fill_n(newFinish, n, val); // 在用newStart申请的新空间填充n个val
-        newFinish = WhoseTinySTL::uninitialized_copy(position, end(), newFinish); // 把原来的position后的粘到newFinish后
-
-        destroyAndDeallocateAll();
-        start_ = newStart;
-        finish_ = newFinish;
-        endOfStorage_ = newEndOfStorage;
-    }
     template<class T, class Alloc>
     template<class InputIterator>
     void vector<T, Alloc>::insert_aux(iterator position, InputIterator first, InputIterator last, std::false_type){
@@ -159,23 +144,35 @@ namespace WhoseTinySTL{
             reallocateAndCopy(position, first, last);
         }
     }
-    template<class T, class Alloc>
+    template<class T, class Alloc> // 书里只给出这个(n,val)版本的insert的实现，因此这个insert是我们重点分析的对象。项目作者的逻辑与书中的不完全一样。
     template<class Integer>
     void vector<T, Alloc>::insert_aux(iterator position, Integer n, const value_type& value, std::true_type){
         // 在大部分编译器下，assert()是一个宏；在少数的编译器下，assert()就是一个函数。我们无需关心这些差异，只管把 assert()当做函数使用即可。
-        assert(n != 0);
+        assert(n != 0); // 过了这行认为都能正常执行
         difference_type locationLeft = endOfStorage_ - finish_;
         difference_type locationNeed = n;
 
-        if(locationLeft >= locationNeed){
+        if(locationLeft >= locationNeed){ // 备用空间大于等于“新增元素个数”。这部分作者和书中的逻辑不一样。作者的逻辑比较直接，以下注释中为项目作者代码：
             auto tempPtr = end() - 1;
-            for(; tempPtr - position >= 0; --tempPtr){
-                construct(tempPtr + locationNeed, *tempPtr);
+            for(; tempPtr - position >= 0; --tempPtr){ // 1、把插入点position后的内容从后往前依次在n个位置后构造出来
+                construct(tempPtr + locationNeed, *tempPtr); // 担心没析构就构造？construct调用的placement new可以这样做！
             }
-            WhoseTinySTL::uninitialized_fill_n(position, n, value);
+            WhoseTinySTL::uninitialized_fill_n(position, n, value); // 2、从插入点开始构造n个value
             finish_ += locationNeed;
-        }else{
-            reallocateAndFillN(position, n, value);
+
+        }else{ // 备用空间小于“新增元素个数”。这部分作者和书中的逻辑一样，但单独写了个函数，只在这里调用一次，我觉得实在没必要，就粘过来了。
+            difference_type newCapacity = getNewCapacity(n); // 按8的整数倍向上取整
+
+            T *newStart = dataAllocator::allocate(newCapacity);
+            T *newEndOfStorage = newStart + newCapacity;
+            T *newFinish = WhoseTinySTL::uninitialized_copy(begin(), position, newStart); // 把原来的position前的粘到newStart前
+            newFinish = WhoseTinySTL::uninitialized_fill_n(newFinish, n, value); // 在用newStart申请的新空间填充n个val
+            newFinish = WhoseTinySTL::uninitialized_copy(position, end(), newFinish); // 把原来的position后的粘到newFinish后
+
+            destroyAndDeallocateAll();
+            start_ = newStart;
+            finish_ = newFinish;
+            endOfStorage_ = newEndOfStorage;
         }
     }
     template<class T, class Alloc>

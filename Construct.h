@@ -13,10 +13,10 @@
 
 namespace WhoseTinySTL{
     template<class T1, class T2>
-    inline void construct(T1 *ptr1, const T2& value){
-        new(ptr1) T1(value); // 这就是那个在已有空间直接构造对象的版本的new
-    }
-
+    inline void construct(T1 *ptr1, const T2& value){ // construct在使用前并不用对内存调用destroy，即使你知道还有没析构的对象,原因如下：
+        new(ptr1) T1(value); // 这就是那个在已有空间直接构造对象的版本的placement new，placement new认为指针指向的空间就是空的，
+    } // （或者说用了这个new就会把那块空间标记为空，我瞎猜的，至少string是这样），可以直接用，不管里面是啥，比如还没析构的对象。类的案例如下：
+    // 把这个网站https://www.geeksforgeeks.org/placement-new-operator-cpp/ 的第二段覆盖写入同一内存的代码换成string仍然能正常运行。
     template<class T>
     inline void destroy(T *ptr){
         ptr->~T();
