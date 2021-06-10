@@ -8,6 +8,7 @@
 #include "Iterator.h"
 //#include "ReverseIterator.h"//还没写，先注释掉
 #include "UninitializedFunctions.h"
+#include <iostream>
 
 namespace WhoseTinySTL{
     // 为了配合类模板声明友元函数，得现在类外声明一次这些函数，再在类内部声明它们是类的友元。
@@ -21,9 +22,9 @@ namespace WhoseTinySTL{
     template<class T, class Alloc = allocator<T>>
     class vector{
     private:
-        T *start_;
-        T *finish_;
-        T *endOfStorage_;
+        T *start_; // 容器内有对象的区块的开始
+        T *finish_;  // 容器内有对象的区块的结束（尾后，finish_指向的区块本身没有对象）
+        T *endOfStorage_; // 整个容器容量的尾部
 
         typedef Alloc dataAllocator;
     public:
@@ -111,9 +112,6 @@ namespace WhoseTinySTL{
         void insert_aux(iterator position, InputIterator first, InputIterator last, std::false_type);
         template<class Integer>
         void insert_aux(iterator position, Integer n, const value_type& value, std::true_type);
-        template<class InputIterator>
-        void reallocateAndCopy(iterator position, InputIterator first, InputIterator last);
-        void reallocateAndFillN(iterator position, const size_type& n, const value_type& val);
         size_type getNewCapacity(size_type len)const;
     public:
         // 项目作者应该是写错了。这些友元函数是想使用类模板的模板参数，那应该按如下格式使用。

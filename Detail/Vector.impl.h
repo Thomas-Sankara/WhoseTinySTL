@@ -100,48 +100,44 @@ namespace WhoseTinySTL{
     typename vector<T, Alloc>::iterator vector<T, Alloc>::erase(iterator first, iterator last){
         // 项目作者并没有按STL源码的方式实现（至少和侯捷说的思路不一样），我认为他自己的实现方式也有问题
         // 他把要删的部分后面的元素从要删的位置开始逐个填充，_finish指针也在一开始就移动好了，但是问题是
-        // 他只把所有的元素都向前移动了，但是处在原位置末尾的last-first个元素他并没有进行析构。
+        // 他只把所有的元素都向前移动了，但是处在原位置末尾的last-first个元素他并没有进行析构，
+        // 虽说vector里调用construct使用的placement new会直接覆盖原有内容，不析构也可以吧。
         // 我下面的代码是基于《STL源码剖析》第123页的内容实现的。
         auto i = std::copy(last, finish_, first); // copy返回的是copy结束后的尾后迭代器
         destroy(i, finish_); // 析构掉所有i之后的元素
         finish_ = finish_ - (last - first); // finish_前移
         return first;
     }
-    template<class T, class Alloc>
-    template<class InputIterator> // 该函数被insert(position,first,last)调用，用来在position处插入迭代器first和last中间的内容
-    void vector<T, Alloc>::reallocateAndCopy(iterator position, InputIterator first, InputIterator last){
-        difference_type newCapacity = getNewCapacity(last - first);
-
-        T *newStart = dataAllocator::allocate(newCapacity);
-        T *newEndOfStorage = newStart + newCapacity;
-        T *newFinish = WhoseTinySTL::uninitialized_copy(begin(), position, newStart);
-        newFinish = WhoseTinySTL::uninitialized_copy(first, last, newFinish);
-        newFinish = WhoseTinySTL::uninitialized_copy(position, end(), newFinish);
-
-        destroyAndDeallocateAll();
-        start_ = newStart;
-        finish_ = newFinish;
-        endOfStorage_ = newEndOfStorage;
-    }
-    template<class T, class Alloc>
-    template<class InputIterator>
+    template<class T, class Alloc> // 这个版本的insert书里没提实现方式，完全是项目作者手笔，详细分析看insert_aux的(n,val)重载版本
+    template<class InputIterator> // 但备用空间大于等于“新增元素个数”这个情况的实现却和书上讲的(n,val)版的实现类似，又进行了讨论，看不懂的话可以看看书。
     void vector<T, Alloc>::insert_aux(iterator position, InputIterator first, InputIterator last, std::false_type){
         difference_type locationLeft = endOfStorage_ - finish_;
         difference_type locationNeed = WhoseTinySTL::distance(first, last); // iostream或algorithm里可能引入了标准库，distance和标准库的冲突了，得加命名空间
 
-        if(locationLeft >= locationNeed){
-            if(finish_ - position > locationNeed){
+        if(locationLeft >= locationNeed){ // 备用空间大于等于“新增元素个数”。有人在issue里提这个版本的insert的实现问题了，看来作者按照别人的建议改过来了
+            if(finish_ - position > locationNeed){ // “插入点之后的现有元素个数“大于”新增元素个数“
                 WhoseTinySTL::uninitialized_copy(finish_ - locationNeed, finish_, finish_);
                 std::copy_backward(position, finish_ - locationNeed, finish_);
                 std::copy(first, last, position);
-            }else{
-                iterator temp = WhoseTinySTL::uninitialized_copy(first + (finish_ - position), last, finish_);
-                WhoseTinySTL::uninitialized_copy(position, finish_, position);
+            }else{ // “插入点之后的现有元素个数“小于等于”新增元素个数“
+                iterator temp = WhoseTinySTL::uninitialized_copy(first + (finish_ - position), last, finish_); // 先填新内容的尾部
+                WhoseTinySTL::uninitialized_copy(position, finish_, temp);
                 std::copy(first, first + (finish_ - position), position);
-            }
+            } // 这个不能像insert_aux的(n,val)版本那样不讨论就使用简化写法。倒是书上讨论(n,val)时，用的是讨论的写法。
             finish_ += locationNeed;
-        }else{
-            reallocateAndCopy(position, first, last);
+        }else{ // 备用空间小于“新增元素个数”。项目作者单独写了个函数，只在这里调用一次，我觉得实在没必要，就粘过来了。
+            difference_type newCapacity = getNewCapacity(last - first);
+
+            T *newStart = dataAllocator::allocate(newCapacity);
+            T *newEndOfStorage = newStart + newCapacity;
+            T *newFinish = WhoseTinySTL::uninitialized_copy(begin(), position, newStart);
+            newFinish = WhoseTinySTL::uninitialized_copy(first, last, newFinish);
+            newFinish = WhoseTinySTL::uninitialized_copy(position, end(), newFinish);
+
+            destroyAndDeallocateAll();
+            start_ = newStart;
+            finish_ = newFinish;
+            endOfStorage_ = newEndOfStorage;
         }
     }
     template<class T, class Alloc> // 书里只给出这个(n,val)版本的insert的实现，因此这个insert是我们重点分析的对象。项目作者的逻辑与书中的不完全一样。
@@ -152,14 +148,12 @@ namespace WhoseTinySTL{
         difference_type locationLeft = endOfStorage_ - finish_;
         difference_type locationNeed = n;
 
-        if(locationLeft >= locationNeed){ // 备用空间大于等于“新增元素个数”。这部分作者和书中的逻辑不一样。作者的逻辑比较直接，以下注释中为项目作者代码：
-            auto tempPtr = end() - 1;
-            for(; tempPtr - position >= 0; --tempPtr){ // 1、把插入点position后的内容从后往前依次在n个位置后构造出来
+        if(locationLeft >= locationNeed){ // 备用空间大于等于“新增元素个数”。这部分作者和书中的逻辑不一样。作者的逻辑比较直接，以下为项目作者代码：
+            for(auto tempPtr = end() - 1; tempPtr - position >= 0; --tempPtr){ // 1、把插入点position后的内容从后往前依次在n个位置后构造出来
                 construct(tempPtr + locationNeed, *tempPtr); // 担心没析构就构造？construct调用的placement new可以这样做！
-            }
+            } // 而且placement new也不管是对象还是内置类型都可以处理，就很方便。
             WhoseTinySTL::uninitialized_fill_n(position, n, value); // 2、从插入点开始构造n个value
-            finish_ += locationNeed;
-
+            finish_ += locationNeed; // 我看了下书，书里分段讨论调用好几个函数，可这些函数里最后也都调用construct，我认为作者简化的写法是对的。
         }else{ // 备用空间小于“新增元素个数”。这部分作者和书中的逻辑一样，但单独写了个函数，只在这里调用一次，我觉得实在没必要，就粘过来了。
             difference_type newCapacity = getNewCapacity(n); // 按8的整数倍向上取整
 
