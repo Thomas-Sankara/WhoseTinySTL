@@ -230,14 +230,14 @@ namespace WhoseTinySTL{
         finish_ = start_;
     }
     // swap从c++11开始，就定义在utility.h里了，现在还没写，先注释掉
-    // template<class T, class Alloc>
-    // void vector<T, Alloc>::swap(vector& v){
-    //     if(this != &v){
-    //         WhoseTinySTL::swap(start_, v.start_);
-    //         WhoseTinySTL::swap(finish_, v.finish_);
-    //         WhoseTinySTL::swap(endOfStorage_, v.endOfStorage_);
-    //     }
-    // }
+    template<class T, class Alloc>
+    void vector<T, Alloc>::swap(vector& v){
+        if(this != &v){
+            WhoseTinySTL::swap(start_, v.start_);
+            WhoseTinySTL::swap(finish_, v.finish_);
+            WhoseTinySTL::swap(endOfStorage_, v.endOfStorage_);
+        }
+    }
     template<class T, class Alloc>
     void vector<T, Alloc>::pop_back(){
         --finish_;

@@ -9,6 +9,7 @@
 //#include "ReverseIterator.h"//还没写，先注释掉
 #include "UninitializedFunctions.h"
 #include <iostream>
+#include "utility.h" // 这是我加上的，vector实现里的swap是在该头文件里实现的
 
 namespace WhoseTinySTL{
     // 为了配合类模板声明友元函数，得现在类外声明一次这些函数，再在类内部声明它们是类的友元。
