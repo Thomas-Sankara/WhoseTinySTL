@@ -30,7 +30,7 @@ namespace WhoseTinySTL{
         typedef Alloc dataAllocator;
     public:
         typedef T                               value_type;
-        typedef T*                              iterator;
+        typedef T*                              iterator; // vector比较简单，是个原生指针
         //typedef const iterator                const_iterator; // 我不明白为何注释掉
         typedef const T*                        const_iterator;
         //typedef reverse_iterator_t<T*>          reverse_iterator; // "ReverseIterator.h"还没写，先注释掉
