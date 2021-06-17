@@ -1,7 +1,7 @@
 #ifndef _FUNCTIONAL_H_
 #define _FUNCTIONAL_H_
 
-namespace WhoseTinySTL{
+namespace WhoseTinySTL{ // 这俩东西我感觉挺奇妙的，一通报装，结果里面就是个<和==
 	//********** [less] ****************
 	template<class T>
 	struct less{

@@ -2,7 +2,7 @@
 #define _LIST_IMPL_H_
 
 namespace WhoseTinySTL{
-    namespace Detail{
+    namespace Detail{ // detail用于node和listIterator。
         template<class T>
         listIterator<T>& listIterator<T>::operator++(){
             p = p->next;
@@ -35,6 +35,7 @@ namespace WhoseTinySTL{
         }
     }// end of Detail namespace
 
+    /**********************************辅助函数**********************************/
     template<class T>
     void list<T>::insert_aux(iterator position, size_type n, const T& val, std::true_type){
         for(auto i = n; i != 0; --i){
@@ -77,12 +78,14 @@ namespace WhoseTinySTL{
             push_back(*first);
     }
     template<class T>
-    typename list<T>::size_type list<T>::size()const{
-        size_type length = 0;
-        for(auto h = head; h != tail; ++h)
-            ++length;
-        return length;
+    typename list<T>::const_iterator list<T>::changeIteratorToConstIterator(iterator& it)const{
+        using nodeP = Detail::node<const T>*;
+        auto temp = (list<const T>*const)this;
+        auto ptr = it.p;
+        Detail::node<const T> node(ptr->data, (nodeP)(ptr->prev), (nodeP)(ptr->next), temp);
+        return const_iterator(&node);
     }
+    /**********************************构造函数**********************************/
     template<class T>
     list<T>::list(){
         head.p = newNode(); // add a dummy node
@@ -104,6 +107,7 @@ namespace WhoseTinySTL{
         for(auto node = l.head.p; node != l.tail.p; node = node->next)
             push_back(node->data);
     }
+    /**********************************拷贝赋值运算符**********************************/
     template<class T>
     list<T>& list<T>::operator = (const list& l){
         if (this != &l){
@@ -111,6 +115,7 @@ namespace WhoseTinySTL{
         }
         return *this;
     }
+    /**********************************析构函数**********************************/
     template<class T>
     list<T>::~list(){
         for(;head!=tail;){
@@ -120,6 +125,14 @@ namespace WhoseTinySTL{
             nodeAllocator::deallocate(temp.p);
         }
         nodeAllocator::deallocate(tail.p);
+    }
+    /**********************************简单成员函数**********************************/
+    template<class T>
+    typename list<T>::size_type list<T>::size()const{
+        size_type length = 0;
+        for(auto h = head; h != tail; ++h)
+            ++length;
+        return length;
     }
     template<class T>
     void list<T>::push_front(const value_type& val){
@@ -151,56 +164,6 @@ namespace WhoseTinySTL{
         tail.p = newTail;
     }
     template<class T>
-    typename list<T>::iterator list<T>::insert(iterator position, const value_type& val){
-        if(position == begin()){
-            push_front(val);
-            return begin();
-        }else if(position == end()){
-            auto ret = position;
-            push_back(val);
-            return ret;
-        }
-        auto node = newNode(val);
-        auto prev = position.p->prev;
-        node->next = position.p;
-        node->prev = prev;
-        prev->next = node;
-        position.p->prev = node;
-        return iterator(node);
-    }
-    template<class T>
-    void list<T>::insert(iterator position, size_type n, const value_type& val){
-        insert_aux(position, n, val, typename std::is_integral<size_type>::type());
-    } // 项目作者上一行笔误成std::is_integral<InputIterator>了
-    template<class T>
-    template<class InputIterator>
-    void list<T>::insert(iterator position, InputIterator first, InputIterator last){
-        insert_aux(position, first, last, typename std::is_integral<InputIterator>::type());
-    }
-    template<class T>
-    typename list<T>::iterator list<T>::erase(iterator position){
-        if(position == head){
-            pop_front();
-            return head;
-        }
-        else{
-            auto prev = position.p->prev;
-            prev->next = position.p->next;
-            position.p->next->prev = prev;
-            deleteNode(position.p);
-            return iterator(prev->next);
-        }
-    }
-    template<class T>
-    typename list<T>::iterator list<T>::erase(iterator first, iterator last){
-        typename list<T>::iterator res;
-        for(;first!=last;){
-            auto temp = first++;
-            res = erase(temp);
-        }
-        return res;
-    }
-    template<class T>
     void list<T>::clear(){
         erase(begin(), end());
     }
@@ -211,14 +174,6 @@ namespace WhoseTinySTL{
     template<class T>
     typename list<T>::iterator list<T>::end(){
         return tail;
-    }
-    template<class T>
-    typename list<T>::const_iterator list<T>::changeIteratorToConstIterator(iterator& it)const{
-        using nodeP = Detail::node<const T>*;
-        auto temp = (list<const T>*const)this;
-        auto ptr = it.p;
-        Detail::node<const T> node(ptr->data, (nodeP)(ptr->prev), (nodeP)(ptr->next), temp);
-        return const_iterator(&node);
     }
     template<class T>
     typename list<T>::const_iterator list<T>::begin()const{
@@ -253,6 +208,59 @@ namespace WhoseTinySTL{
             curNode = nextNode;
         } while (curNode != head.p);
     }
+    /**********************************insert**********************************/
+    template<class T>
+    typename list<T>::iterator list<T>::insert(iterator position, const value_type& val){
+        if(position == begin()){
+            push_front(val);
+            return begin();
+        }else if(position == end()){
+            auto ret = position;
+            push_back(val);
+            return ret;
+        }
+        auto node = newNode(val);
+        auto prev = position.p->prev;
+        node->next = position.p;
+        node->prev = prev;
+        prev->next = node;
+        position.p->prev = node;
+        return iterator(node);
+    }
+    template<class T>
+    void list<T>::insert(iterator position, size_type n, const value_type& val){
+        insert_aux(position, n, val, typename std::is_integral<size_type>::type());
+    } // 项目作者上一行笔误成std::is_integral<InputIterator>了
+    template<class T>
+    template<class InputIterator>
+    void list<T>::insert(iterator position, InputIterator first, InputIterator last){
+        insert_aux(position, first, last, typename std::is_integral<InputIterator>::type());
+    }
+    /**********************************erase**********************************/
+    template<class T>
+    typename list<T>::iterator list<T>::erase(iterator position){
+        if(position == head){
+            pop_front();
+            return head;
+        }
+        else{
+            auto prev = position.p->prev;
+            prev->next = position.p->next;
+            position.p->next->prev = prev;
+            deleteNode(position.p);
+            return iterator(prev->next);
+        }
+    }
+    template<class T>
+    typename list<T>::iterator list<T>::erase(iterator first, iterator last){
+        typename list<T>::iterator res;
+        for(;first!=last;){
+            auto temp = first++;
+            res = erase(temp);
+        }
+        return res;
+    }
+    /**********************************remove**********************************/
     template<class T>
     void list<T>::remove(const value_type& val){
         for (auto it = begin(); it != end();){
@@ -272,6 +280,7 @@ namespace WhoseTinySTL{
                 ++it;
         }
     }
+    /**********************************swap**********************************/
     template<class T>
     void list<T>::swap(list& x){
         WhoseTinySTL::swap(head.p, x.head.p);
@@ -281,6 +290,7 @@ namespace WhoseTinySTL{
     void swap(list<T>& x, list<T>& y){
         x.swap(y);
     }
+    /**********************************unique**********************************/
     template<class T>
     void list<T>::unique(){
         nodePtr curNode = head.p;
@@ -324,6 +334,7 @@ namespace WhoseTinySTL{
             }
         }
     }
+    /**********************************splice**********************************/
     template<class T>
     void list<T>::splice(iterator position, list& x){
         this->insert(position, x.begin(), x.end());
@@ -359,6 +370,7 @@ namespace WhoseTinySTL{
         auto next = i;
         this->splice(position, x, i, ++next);
     }
+    /**********************************merge**********************************/
     template<class T>
     void list<T>::merge(list& x){
         auto it1 = begin(), it2 = x.begin();
@@ -390,6 +402,7 @@ namespace WhoseTinySTL{
             this->splice(it1, x, it2, x.end());
         }
     }
+    /**********************************逻辑运算符**********************************/
     template<class T>
     bool operator== (const list<T>& lhs, const list<T>& rhs){
         auto node1 = lhs.head.p, node2 = rhs.head.p;
@@ -405,6 +418,7 @@ namespace WhoseTinySTL{
     bool operator!= (const list<T>& lhs, const list<T>& rhs){
         return !(lhs==rhs);
     }
+    /**********************************sort**********************************/
     template<class T>
     void list<T>::sort(){
         sort(WhoseTinySTL::less<T>());

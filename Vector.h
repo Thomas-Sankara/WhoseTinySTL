@@ -9,7 +9,7 @@
 //#include "ReverseIterator.h"//还没写，先注释掉
 #include "UninitializedFunctions.h"
 #include <iostream>
-#include "utility.h" // 这是我加上的，vector实现里的swap是在该头文件里实现的
+#include "Utility.h" // 这是我加上的，vector实现里的swap是在该头文件里实现的
 
 namespace WhoseTinySTL{
     // 为了配合类模板声明友元函数，得现在类外声明一次这些函数，再在类内部声明它们是类的友元。
@@ -87,7 +87,7 @@ namespace WhoseTinySTL{
 
         // 修改容器
         void clear(); // 销毁所有容器内对象，size设为0，但不回收容器的空间
-        //void swap(vector& v); // 还没实现，先注释掉
+        void swap(vector& v);
         void push_back(const value_type& value);
         void pop_back();
         iterator insert(iterator position, const value_type& val);

@@ -229,7 +229,7 @@ namespace WhoseTinySTL{
         dataAllocator::destroy(start_, finish_);
         finish_ = start_;
     }
-    // swap从c++11开始，就定义在utility.h里了，现在还没写，先注释掉
+    // swap从c++11开始，就定义在utility.h里了
     template<class T, class Alloc>
     void vector<T, Alloc>::swap(vector& v){
         if(this != &v){
