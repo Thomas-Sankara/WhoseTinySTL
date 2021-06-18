@@ -9,6 +9,7 @@
 #include "Functional.h" // 我自己加的，因为less的实现在该头文件中
 
 #include <type_traits> // 不用自己的"TypeTraits.h"和vector的原因一样:用了is_integral方法
+#include <iostream>//for debug
 
 namespace WhoseTinySTL{
     template<class T>

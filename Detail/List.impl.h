@@ -36,7 +36,7 @@ namespace WhoseTinySTL{
     }// end of Detail namespace
 
     /**********************************辅助函数**********************************/
-    template<class T>
+    template<class T> // 项目作者的风格不是很统一，即使是他的源码，insert和insert_aux也没写在一起，但vector中写在一起了
     void list<T>::insert_aux(iterator position, size_type n, const T& val, std::true_type){
         for(auto i = n; i != 0; --i){
             position = insert(position, val);
@@ -62,9 +62,9 @@ namespace WhoseTinySTL{
         nodeAllocator::destroy(p);
         nodeAllocator::deallocate(p);
     }
-    template<class T>
+    template<class T> // tips:ctor是constructor（构造函数）的常用缩写。
     void list<T>::ctorAux(size_type n, const value_type& val, std::true_type){
-        head.p = newNode(); // add a dummy node
+        head.p = newNode(); // 构造list对象时，首先要有个空节点，一切都围绕它展开
         tail.p = head.p;
         while(n--)
             push_back(val);
@@ -77,14 +77,14 @@ namespace WhoseTinySTL{
         for(;first!=last;++first)
             push_back(*first);
     }
-    template<class T>
+    template<class T> // 思路是复制个静态的node，内容和原node一样，然后返回指向该静态node的iterator
     typename list<T>::const_iterator list<T>::changeIteratorToConstIterator(iterator& it)const{
         using nodeP = Detail::node<const T>*;
-        auto temp = (list<const T>*const)this;
+        auto temp = (list<const T>*const)this; // temp存的是node的container成员，还是没看出来有啥用
         auto ptr = it.p;
         Detail::node<const T> node(ptr->data, (nodeP)(ptr->prev), (nodeP)(ptr->next), temp);
         return const_iterator(&node);
-    }
+    } // 变量node是临时变量，你把node的地址拿来初始化const_iterator,结果出了函数，这个地址就无效了
     /**********************************构造函数**********************************/
     template<class T>
     list<T>::list(){
@@ -97,7 +97,7 @@ namespace WhoseTinySTL{
     }
     template<class T>
     template<class InputIterator>
-    list<T>::list(InputIterator first,InputIterator last){
+    list<T>::list(InputIterator first, InputIterator last){
         ctorAux(first, last, std::is_integral<InputIterator>());
     }
     template<class T>
@@ -111,10 +111,10 @@ namespace WhoseTinySTL{
     template<class T>
     list<T>& list<T>::operator = (const list& l){
         if (this != &l){
-            list(l).swap(*this);
-        }
-        return *this;
-    }
+            list(l).swap(*this); // list的swap的定义是交换this与目标的head和tail迭代器里
+        } // 指向node的指针p（其实就和完全交换了迭代器一样）。这里是交换了临时变量list(l)的this
+        return *this; // 与目标变量*this的head和tail的p指针。这是“拷贝并交换”技术。《c++ primer》
+    } // 里提到了，参见https://blog.csdn.net/comeonow/article/details/115582089
     /**********************************析构函数**********************************/
     template<class T>
     list<T>::~list(){
@@ -128,12 +128,20 @@ namespace WhoseTinySTL{
     }
     /**********************************简单成员函数**********************************/
     template<class T>
-    typename list<T>::size_type list<T>::size()const{
-        size_type length = 0;
-        for(auto h = head; h != tail; ++h)
-            ++length;
-        return length;
-    }
+    typename list<T>::size_type list<T>::size()const{ // 我把作者写的从头到尾的小循环删了
+        return WhoseTinySTL::distance(head,tail); // 作者忘了可以直接调distance求解
+    } // 我自己改代码时遇到了个有趣的bug，这里记录一下：distance(begin(),end())结果是0。
+    // 输出一下，发现begin()==end()。目前发现，由于size()是const的，所以调用的begin()和end()
+    // 也是他们的const版本。它们的const版本都调用了changeIteratorToConstIterator(),该函数里
+    // 其实就是由原node生成了const node，再返回指向该const node的const_iterator。发现问题没有？
+    // 这个生成的const node是临时变量！const_iterator里的指针指向它，一出这个函数，该地址就成为了
+    // 无效地址，但const_iterator本身是一个对象，不只是一个指针，所以不会报“返回临时变量”的错。
+    // 错得很隐蔽。这是项目作者源码的错误。下面来探究第二个错误：为啥begin()==end()总是成立？
+    // 从==的定义来看，重载的==就是一行begin().p==end().p。原因就是编译器在编译时，把你这两次
+    // 临时变量申请的内存空间从同一处取了，只能说编译器的设计逻辑导致了它在两次需要分配栈内存时，
+    // 都从同一个地方取内存了。想想也有道理，临时变量函数结束就没了，两次调用同一个函数，
+    // 临时变量占用的空间也一样，直接原地申请肯定错不了，别的地方的变量再在这个地址往后的地方申请即可。
+    // 分析参考我的文章：https://blog.csdn.net/comeonow/article/details/118033376
     template<class T>
     void list<T>::push_front(const value_type& val){
         auto node = newNode(val);
@@ -177,7 +185,7 @@ namespace WhoseTinySTL{
     }
     template<class T>
     typename list<T>::const_iterator list<T>::begin()const{
-        auto temp = (list*const)this;
+        auto temp = (list*const)this; // 得到一个指向this的静态指针
         return changeIteratorToConstIterator(temp->head);
     }
     template<class T>
