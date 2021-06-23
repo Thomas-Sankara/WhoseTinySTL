@@ -2,39 +2,6 @@
 #define _LIST_IMPL_H_
 
 namespace WhoseTinySTL{
-    namespace Detail{ // detail用于node和listIterator。
-        template<class T>
-        listIterator<T>& listIterator<T>::operator++(){
-            p = p->next;
-            return *this;
-        }
-        template<class T>
-        listIterator<T> listIterator<T>::operator++(int){
-            auto res = *this;
-            ++*this;
-            return res;
-        }
-        template<class T>
-        listIterator<T>& listIterator<T>::operator --(){
-            p = p->prev;
-            return *this;
-        }
-        template<class T>
-        listIterator<T> listIterator<T>::operator --(int){
-            auto res = *this;
-            --*this;
-            return res;
-        }
-        template<class T>
-        bool operator ==(const listIterator<T>& lhs, const listIterator<T>& rhs){
-            return lhs.p == rhs.p;
-        }
-        template<class T>
-        bool operator !=(const listIterator<T>& lhs, const listIterator<T>& rhs){
-            return !(lhs == rhs);
-        }
-    }// end of Detail namespace
-
     /**********************************辅助函数**********************************/
     template<class T> // 项目作者的风格不是很统一，即使是他的源码，insert和insert_aux也没写在一起，但vector中写在一起了
     void list<T>::insert_aux(iterator position, size_type n, const T& val, std::true_type){
@@ -53,7 +20,7 @@ namespace WhoseTinySTL{
     template<class T> // 不要在定义处给默认初值，要在声明出
     typename list<T>::nodePtr list<T>::newNode(const T& val/* = T()*/){
         nodePtr res = nodeAllocator::allocate();
-        nodeAllocator::construct(res, Detail::node<T>(val, nullptr, nullptr, this));
+        nodeAllocator::construct(res, node<T>(val, nullptr, nullptr, this));
         return res;
     }
     template<class T>
@@ -77,14 +44,17 @@ namespace WhoseTinySTL{
         for(;first!=last;++first)
             push_back(*first);
     }
-    template<class T> // 思路是复制个静态的node，内容和原node一样，然后返回指向该静态node的iterator
-    typename list<T>::const_iterator list<T>::changeIteratorToConstIterator(iterator& it)const{
-        using nodeP = Detail::node<const T>*;
-        auto temp = (list<const T>*const)this; // temp存的是node的container成员，还是没看出来有啥用
-        auto ptr = it.p;
-        Detail::node<const T> node(ptr->data, (nodeP)(ptr->prev), (nodeP)(ptr->next), temp);
-        return const_iterator(&node);
-    } // 变量node是临时变量，你把node的地址拿来初始化const_iterator,结果出了函数，这个地址就无效了
+    // 思路是复制个静态的node，内容和原node一样，然后返回指向该静态node的iterator
+    // 变量node是临时变量，作者把node的地址拿来初始化const_iterator,结果出了函数，这个地址就无效了
+    // 其实也就cbegin和cend用了这个函数，我直接在cbegin和cend里改了，这个错的函数就用不上了，整个注释掉
+    // template<class T> // 我不在作者的基础上改成new申请空间是因为即使那样也有逻辑错误
+    // typename list<T>::const_iterator list<T>::changeIteratorToConstIterator(iterator& it)const{
+    //     using nodeP = Detail::node<const T>*;
+    //     //auto temp = (list<const T>*const)this; // temp存的是node的container成员，还是没看出来有啥用
+    //     auto ptr = it.p;
+    //     Detail::node<const T> node(ptr->data, (nodeP)(ptr->prev), (nodeP)(ptr->next), temp);
+    //     return const_iterator(&node);
+    // } // 新生成的两个节点是head和tail的const复制。但是其他原节点并不指向他俩，比如调用distance，会无限循环。
     /**********************************构造函数**********************************/
     template<class T>
     list<T>::list(){
@@ -129,11 +99,11 @@ namespace WhoseTinySTL{
     /**********************************简单成员函数**********************************/
     template<class T>
     typename list<T>::size_type list<T>::size()const{ // 我把作者写的从头到尾的小循环删了
-        return WhoseTinySTL::distance(head,tail); // 作者忘了可以直接调distance求解
+        return WhoseTinySTL::distance(cbegin(),cend()); // 作者忘了可以直接调distance求解
     } // 我自己改代码时遇到了个有趣的bug，这里记录一下：distance(begin(),end())结果是0。
     // 输出一下，发现begin()==end()。目前发现，由于size()是const的，所以调用的begin()和end()
-    // 也是他们的const版本。它们的const版本都调用了changeIteratorToConstIterator(),该函数里
-    // 其实就是由原node生成了const node，再返回指向该const node的const_iterator。发现问题没有？
+    // 也是他们的const版本（现已被我删除）。它们的const版本都调用了changeIteratorToConstIterator(),
+    // 该函数里其实就是由原node生成了const node，再返回指向该const node的const_iterator。发现问题没有？
     // 这个生成的const node是临时变量！const_iterator里的指针指向它，一出这个函数，该地址就成为了
     // 无效地址，但const_iterator本身是一个对象，不只是一个指针，所以不会报“返回临时变量”的错。
     // 错得很隐蔽。这是项目作者源码的错误。下面来探究第二个错误：为啥begin()==end()总是成立？
@@ -183,15 +153,17 @@ namespace WhoseTinySTL{
     typename list<T>::iterator list<T>::end(){
         return tail;
     }
-    template<class T>
-    typename list<T>::const_iterator list<T>::begin()const{
-        auto temp = (list*const)this; // 得到一个指向this的静态指针
-        return changeIteratorToConstIterator(temp->head);
-    }
-    template<class T>
-    typename list<T>::const_iterator list<T>::end()const{
-        auto temp = (list*const)this;
-        return changeIteratorToConstIterator(temp->tail);
+    template<class T> // 目的就是返回一个迭代器，这个迭代器内的指针不能改所指对象内容
+    typename list<T>::const_iterator list<T>::cbegin()const{
+        // auto temp = (list*const)this; // 项目作者多此一举，下一行直接写head也会隐式地用const this调用
+        // return changeIteratorToConstIterator(temp->head);
+        return const_iterator(head);
+    } // 里面多套一层const是为了处理const函数隐式地使用const this->调用成员变量导致成员变量变成const变量
+    template<class T> // 目的就是返回一个迭代器，这个迭代器内的指针不能改所指对象内容
+    typename list<T>::const_iterator list<T>::cend()const{
+        // auto temp = (list*const)this;
+        // return changeIteratorToConstIterator(temp->tail);
+        return const_iterator(tail);
     }
     // template<class T> // reverse_iterator还没实现，先注释
     // typename list<T>::reverse_iterator list<T>::rbegin(){
