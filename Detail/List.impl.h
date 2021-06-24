@@ -117,7 +117,7 @@ namespace WhoseTinySTL{
         auto node = newNode(val);
         head.p->prev = node;
         node->next = head.p;
-        head.p = head;
+        head.p = node;
     }
     template<class T>
     void list<T>::pop_front(){
