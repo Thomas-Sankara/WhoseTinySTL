@@ -98,6 +98,7 @@ protected:
             (*(link_type((*position.node).prev))).next = first.node;
             link_type tmp = link_type((*position.node).prev);
             (*position.node).prev = (*last.node).prev;
+            (*last.node).prev = (*first.node).prev;
             (*first.node).prev = tmp;
         }
     }

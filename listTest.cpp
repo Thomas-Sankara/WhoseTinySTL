@@ -57,4 +57,9 @@ int main(){
     cout << e.size();
     cout << endl << "clear, size test finished" << endl << endl;
     /*e是空的，后面的测试代码不要用！！！！！！！！！！！！！！！！！！！！！！！！！！！！*/
+
+    cout << "c: reverse test" << endl;
+    c.reverse();
+    for(auto i=c.begin();i!=c.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    cout << endl << "reverse finished" << endl << endl;
 }

@@ -44,6 +44,19 @@ namespace WhoseTinySTL{
         for(;first!=last;++first)
             push_back(*first);
     }
+    template<class T> // 将[first,last)内的所有元素移动到position之前。该函数被splice,merge,reverse,sort使用
+    void list<T>::transfer(iterator position, iterator first, iterator last){ // 书中它是protected的
+        if(position != last){
+            last.p->prev->next = position.p;
+            first.p->prev->next = last.p;
+            position.p->prev->next = first.p;
+            nodePtr tmp = position.p->prev;
+            position.p->prev = last.p->prev;
+            last.p->prev = first.p->prev;
+            first.p->prev = tmp;
+            head.p = tail.p->next; // 书里没这句，但我们知道，涉及节点操作一定在操作后更新head迭代器
+        }
+    }
     // 思路是复制个静态的node，内容和原node一样，然后返回指向该静态node的iterator
     // 变量node是临时变量，作者把node的地址拿来初始化const_iterator,结果出了函数，这个地址就无效了
     // 其实也就cbegin和cend用了这个函数，我直接在cbegin和cend里改了，这个错的函数就用不上了，整个注释掉
@@ -97,6 +110,9 @@ namespace WhoseTinySTL{
         nodeAllocator::deallocate(tail.p);
     }
     /**********************************简单成员函数**********************************/
+    // 你可能好奇为啥不整一个变量实时记录更新size，因为那样对链表大段插入时，就要逐个统计插了多少节点，
+    // 那插入效率就和vector一样了，就链表的数据结构就没意义了。所以size是每次从头数到尾。详细说明参考：
+    // http://blog.sina.com.cn/s/blog_476a25110100magc.html
     template<class T>
     typename list<T>::size_type list<T>::size()const{ // 我把作者写的从头到尾的小循环删了
         return WhoseTinySTL::distance(cbegin(),cend()); // 作者忘了可以直接调distance求解
@@ -164,19 +180,15 @@ namespace WhoseTinySTL{
     //     return reverse_iterator(head);
     // }
     template<class T>
-    void list<T>::reverse(){ // 采用尾插法
-        if (empty() || head.p->next == tail.p) return;
-        auto curNode = head.p;
-        head.p = tail.p->prev;
-        head.p->prev = nullptr;
-        do{ // 又是一通指针操作，能用transfer替代
-            auto nextNode = curNode->next;
-            curNode->next = head.p->next;
-            head.p->next->prev = curNode;
-            head.p->next = curNode;
-            curNode->prev = head.p;
-            curNode = nextNode;
-        } while (curNode != head.p);
+    void list<T>::reverse(){ // 采用书142页的实现方法
+        if (empty() || head.p->next == tail.p) return; // 长度为0或1不用反转
+        iterator first = begin();
+        ++first;
+        while (first != end()) {
+            iterator old = first;
+            ++first;
+            transfer(begin(), old, first); // 就是在用transfer在list内一次头插一个节点
+        }
     }
     /**********************************insert**********************************/
     template<class T> // 参考书135页实现
