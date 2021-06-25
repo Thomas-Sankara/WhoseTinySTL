@@ -161,6 +161,7 @@ namespace WhoseTinySTL{ // 我把作者的Detail命名空间删掉了
         template<class InputIterator>
         void insert_aux(iterator position, InputIterator first, InputIterator last, std::false_type);
         const_iterator changeIteratorToConstIterator(iterator& it)const;
+        void transfer(iterator position, iterator first, iterator last);
     public:
         template<class _T>
         friend void swap(list<_T>& x, list<_T>& y);
