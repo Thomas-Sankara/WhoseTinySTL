@@ -45,7 +45,7 @@ namespace WhoseTinySTL{
             push_back(*first);
     }
     template<class T> // 将[first,last)内的所有元素移动到position之前。该函数被splice,merge,reverse,sort使用
-    void list<T>::transfer(iterator position, iterator first, iterator last){ // 书中它是protected的
+    void list<T>::transfer(iterator position, list& x, iterator first, iterator last){ // 书中它是protected的
         if(position != last){
             last.p->prev->next = position.p;
             first.p->prev->next = last.p;
@@ -55,7 +55,8 @@ namespace WhoseTinySTL{
             last.p->prev = first.p->prev;
             first.p->prev = tmp;
             head.p = tail.p->next; // 书里没这句，但我们知道，涉及节点操作一定在操作后更新head迭代器
-        }
+            x.head.p = x.tail.p->next; // 这句就更容易忘了。书里应该是少一个参数：被操作的list x！
+        } // 被操作对象的节点也被修改了，也得更新head迭代器！
     }
     // 思路是复制个静态的node，内容和原node一样，然后返回指向该静态node的iterator
     // 变量node是临时变量，作者把node的地址拿来初始化const_iterator,结果出了函数，这个地址就无效了
@@ -187,7 +188,7 @@ namespace WhoseTinySTL{
         while (first != end()) {
             iterator old = first;
             ++first;
-            transfer(begin(), old, first); // 就是在用transfer在list内一次头插一个节点
+            transfer(begin(), *this, old, first); // 就是在用transfer在list内一次头插一个节点
         }
     }
     /**********************************insert**********************************/
@@ -305,41 +306,23 @@ namespace WhoseTinySTL{
         }
     }
     /**********************************splice**********************************/
-    template<class T>
+    // splice和transfer辅助函数的功能十分相像，因此调用transfer可以极大简化splice的实现。参见书141页。
+    template<class T> // 将x接合于position所指位置之前。x必须不同于*this
     void list<T>::splice(iterator position, list& x){
-        this->insert(position, x.begin(), x.end());
-        x.head.p = x.tail.p;
+        if(!x.empty()) transfer(position, x, x.begin(), x.end());
     }
-    template<class T>
-    void list<T>::splice(iterator position, list& x, iterator first, iterator last){
-        if (first.p == last.p) return;
-        auto tailNode = last.p->prev;
-        if(x.head.p == first.p){
-            x.head.p = last.p;
-            x.head.p->prev = nullptr;
-        }
-        else{
-            first.p->prev->next = last.p;
-            last.p->prev = first.p->prev;
-        }
-        if(position.p == head.p){
-            first.p->prev = nullptr;
-            tailNode->next = head.p;
-            head.p->prev = tailNode;
-            head.p = first.p;
-        }
-        else{
-            position.p->prev->next = first.p;
-            first.p->prev = position.p->prev;
-            tailNode->next = position.p;
-            position.p->prev = tailNode;
-        }
-    }
-    template<class T>
+    template<class T> // 将i所指元素接合于position所指位置之前。position和i可指向同一个list
     void list<T>::splice(iterator position, list& x, iterator i){
-        auto next = i;
-        this->splice(position, x, i, ++next);
+        iterator j = i; // 这里用到的实现技巧就和reverse一样，相当于一次头插一个节点
+        ++j;
+        if(position == i || position == j) return;
+        transfer(position, x, i, j);
     }
+    // 将[first,last)内的所有元素接合于position所指位置之前，position和[first,last)可指向同一个list
+    template<class T> // 但position不能位于[first,last)之内。
+    void list<T>::splice(iterator position, list& x, iterator first, iterator last){
+        if (first != last) transfer(position, x, first, last);
+    }    
     /**********************************merge**********************************/
     template<class T>
     void list<T>::merge(list& x){
