@@ -95,7 +95,7 @@ protected:
         if (position != last) { // 比如公开接口（方法）splice的各种重载版本、merge()、reverse()、sort()都调用了它
             (*(link_type((*last.node).prev))).next = position.node;
             (*(link_type((*first.node).prev))).next = last.node;
-            (*(link_type((*position.node)))).next = first.node;
+            (*(link_type((*position.node).prev))).next = first.node;
             link_type tmp = link_type((*position.node).prev);
             (*position.node).prev = (*last.node).prev;
             (*first.node).prev = tmp;
