@@ -324,36 +324,36 @@ namespace WhoseTinySTL{
         if (first != last) transfer(position, x, first, last);
     }    
     /**********************************merge**********************************/
-    template<class T>
+    template<class T> // merge()将x合并到*this身上。两个lists的内容都必须先经过递增排序
     void list<T>::merge(list& x){
-        auto it1 = begin(), it2 = x.begin();
-        while(it1 != end() && it2 != x.end()){
-            if(*it1 <= *it2)
-                ++it1;
-            else{
-                auto temp = it2++;
-                this->splice(it1, x, temp);
-            }
-        }
-        if (it1 == end()){
-            this->splice(it1, x, it2, x.end());
-        }
+        iterator first1 = begin();
+        iterator last1 = end();
+        iterator first2 = x.begin();
+        iterator last2 = x.end();
+        while(first1 != last1 && first2 != last2) // 注意：前提是，两个lists都已经过递增排序
+            if(*first2 < *first1){
+                iterator next = first2;
+                transfer(first1, x, first2, ++next);
+                first2 = next;
+            }else
+                ++first1;
+        if(first2 != last2) transfer(last1, x, first2, last2);
     }
     template<class T>
     template<class Compare>
     void list<T>::merge(list& x, Compare comp){
-        auto it1 = begin(), it2 = x.begin();
-        while(it1 !=end && it2 != x.end()){
-            if(comp(*it2, *it1)){
-                auto temp = it2++;
-                this->splice(it1, x, temp);
-            }
-            else
-                ++it1;
-        }
-        if(it1 == end()){
-            this->splice(it1, x, it2, x.end());
-        }
+        iterator first1 = begin();
+        iterator last1 = end();
+        iterator first2 = x.begin();
+        iterator last2 = x.end();
+        while(first1 != last1 && first2 != last2) // 注意：前提是，两个lists都已经过递增排序
+            if(comp(*first2, *first1)){
+                iterator next = first2;
+                transfer(first1, x, first2, ++next);
+                first2 = next;
+            }else
+                ++first1;
+        if(first2 != last2) transfer(last1, x, first2, last2);
     }
     /**********************************逻辑运算符**********************************/
     template<class T>
@@ -372,34 +372,35 @@ namespace WhoseTinySTL{
         return !(lhs==rhs);
     }
     /**********************************sort**********************************/
-    template<class T>
-    void list<T>::sort(){
-        sort(WhoseTinySTL::less<T>());
-    }
-    template<class T>
-    template<class Compare>
-    void list<T>::sort(Compare comp){
-        if(empty() || head.p->next == tail.p)
-            return;
-        
-        list carry;
-        list counter[64];
-        int fill = 0;
-        while(!empty()){
-            carry.splice(carry.begin(), *this, begin());
-            int i = 0;
-            while (i < fill && !counter[i].empty()){
-                counter[i].merge(carry, comp);
-                carry.swap(counter[i++]);
-            }
-            carry.swap(counter[i]);
-            if(i==fill)
-                ++fill;
+    // list不能使用STL算法sort()，必须使用自己的sort()成员函数，
+    // 因为STL算法sort()只接受RandomAccessIterator（侯捷此处笔误，误写成Ramdon）
+    // 本函数采用quick sort（错！这显然是归并排序！都疯狂merge了咋还quick sort呢！）
+    // 该归并排序的解析参见https://blog.csdn.net/ww32zz/article/details/50282257
+    // 以下代码中的注释除了来自侯捷，剩下的大部分来自该博客，我自己补充了一部分。
+    template <class T> // 作者原是版本就调用了algorithm里的sort，这显然不对，我删掉了
+    void list<T>::sort() { 
+        if(empty() || head.p->next == tail.p) return; // 长度为0或1不用排序
+        // 一些新的lists，作为中介数据存放区。注意，只占用了常数空间，而且不大。
+        // 这种用遍历而非递归实现的归并排序将list的长度表示为二进制形式。
+        // 用类似加法进位的思想，每次从链表中拿出一个元素，与这些子序列进行归并，
+        // 产生进位则与下一个子序列进行归并，一直到没有进位的产生。
+        list<T> carry;       // 加法过程中保存中间结果
+        list<T> counter[64]; // 存放不同长度的子序列，每个自序列本身有序
+        int fill = 0;               // 当前二进制位数
+        while (!empty()) {          // 有了前面splice和merge的代码你知道，它们都没有引入新的内存，只是改指针
+            carry.splice(carry.begin(), *this, begin()); // 将list的表头元素转入carry中，相当于+1操作
+            int i = 0;                              // 处理当前的二进制位数
+            while(i<fill && !counter[i].empty()){   // 处理+1产生的进位
+                counter[i].merge(carry);            // 进位。由于merge调用了transfer，执行完这行后carry里面是空的。
+                carry.swap(counter[i++]);           // 保存目前的加法结果，准备处理下一位。这行把计算结果又存入carry，而counter[i]现在被swap成空的了。
+            }                                       // 循环结束时，要么没有进位，要么已经处理到最高位
+            carry.swap(counter[i]);                 // 更新当前子序列，操作后carry为空
+            if(i == fill) ++fill;
         }
-        for(int i = 0; i != fill; ++i){
-            counter[i].merge(counter[i-1], comp);
-        }
-        swap(counter[fill - 1]);
+
+        for (int i = 1; i < fill; ++i) // 子序列归并
+            counter[i].merge(counter[i-1]);
+        swap(counter[fill-1]);
     }
 }
 

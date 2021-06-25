@@ -111,4 +111,12 @@ int main(){
     c.splice(++temIt, tem_ac_2, tem_ac_2.begin(), tem_ac_2.end());
     for(auto i=c.begin();i!=c.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
     cout << endl << "splice test finished" << endl << endl;
+
+    cout << "f: merge test" << endl;
+    WhoseTinySTL::list<string> f; // 类类型
+    for(int i=5;i<10;i++) f.push_back(std::to_string(i));
+    auto tem_a1(a);
+    f.merge(a);
+    for(auto i=f.begin();i!=f.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    cout << endl << "merge test finished" << endl << endl;
 }
