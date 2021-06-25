@@ -170,7 +170,7 @@ public:
     template <class T, class Alloc>
     void list<T, Alloc>::unique() {
         iterator first = begin();
-        iterator last == end();
+        iterator last = end();
         if(first == last) return; // 空链表，什么都不必做
         iterator next = first;
         while (++next != last) { // 遍历每一个节点

@@ -255,9 +255,9 @@ namespace WhoseTinySTL{
     }
     template<class T>
     template<class Predicate>
-    void list<T>::remove_if(Predicate pred){
+    void list<T>::remove_if(Predicate pred){ // 移除每一个令判断式pred为true的元素
         for(auto it = begin(); it != end();){
-            if(pred(*it))
+            if(pred(*it)) // pred是个函数对象，它作为对象可以被当作参数传进来，又可以像函数一样调用它
                 it = erase(it);
             else
                 ++it;
@@ -274,47 +274,34 @@ namespace WhoseTinySTL{
         x.swap(y);
     }
     /**********************************unique**********************************/
-    template<class T>
-    void list<T>::unique(){
-        nodePtr curNode = head.p;
-        while(curNode!=tail.p){
-            nodePtr nextNode = curNode->next;
-            if (curNode->data == nextNode->data){
-                if(nextNode == tail.p){
-                    curNode->next = nullptr;
-                    tail.p = curNode;
-                }
-                else{
-                    curNode->next = nextNode->next;
-                    nextNode->next->prev = curNode;
-                }
-                deleteNode(nextNode);
-            }
-            else{
-                curNode = nextNode;
-            }
+    // 注意，unique移除的是数值相同的“连续元素”，实际应用时常常先排序，再用unique去重。
+    template<class T> // 书137页比较精简，故采用书中写法。当然，还有一点就是作者直接调用了deleteNode()
+    void list<T>::unique(){ // 然而deleteNode()应当只析构和释放空间，我们还需要考虑头指针的问题
+        iterator first = begin();
+        iterator last = end();
+        if(first == last) return; // 空链表，什么都不必做
+        iterator next = first;
+        while (++next != last) { // 遍历每一个节点
+            if(*first == *next) // 如果在次区段中有相同的元素
+                erase(next); // 移除之。使用erase可以在erase内部就修改头指针。
+            else
+                first = next; // 调整指针
+            next = first; // 修正区段范围
         }
     }
     template<class T>
     template<class BinaryPredicate>
     void list<T>::unique(BinaryPredicate binary_pred){
-        nodePtr curNode = head.p;
-        while (curNode != tail.p){
-            nodePtr nextNode = curNode->next;
-            if(binary_pred(curNode->data, nextNode->data)){
-                if(nextNode == tail.p){
-                    curNode->next = nullptr;
-                    tail.p = curNode;
-                }
-                else{
-                    curNode->next = nextNode->next;
-                    nextNode->next->prev = curNode;
-                }
-                deleteNode(nextNode);
-            }
-            else{
-                curNode = nextNode;
-            }
+        iterator first = begin();
+        iterator last = end();
+        if(first == last) return; // 空链表，什么都不必做
+        iterator next = first;
+        while (++next != last) { // 遍历每一个节点
+            if(binary_pred(*first, *next)) // 如果在次区段中有满足binary_pred的元素对
+                erase(next); // 移除之。使用erase可以在erase内部就修改头指针。
+            else
+                first = next; // 调整指针
+            next = first; // 修正区段范围
         }
     }
     /**********************************splice**********************************/
