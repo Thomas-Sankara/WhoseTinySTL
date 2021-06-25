@@ -112,37 +112,27 @@ namespace WhoseTinySTL{
     // 都从同一个地方取内存了。想想也有道理，临时变量函数结束就没了，两次调用同一个函数，
     // 临时变量占用的空间也一样，直接原地申请肯定错不了，别的地方的变量再在这个地址往后的地方申请即可。
     // 分析参考我的文章：https://blog.csdn.net/comeonow/article/details/118033376
-    template<class T>
+    
+    // 可以精简代码，下面四个操作list头尾的方法都可以通过调用insert和erase实现，不用全都自己写指针处理了
+    template<class T> // 作者源码里这四个函数全都是自己改指针指向，这里就不予采用了
     void list<T>::push_front(const value_type& val){
-        auto node = newNode(val);
-        head.p->prev = node;
-        node->next = head.p;
-        head.p = node;
+        insert(begin(), val); // 记住STL里insert的原则：insert到输入的iterator所对应的元素前面
     }
     template<class T>
     void list<T>::pop_front(){
-        auto oldNode = head.p;
-        head.p = oldNode->next;
-        head.p->prev = nullptr;
-        deleteNode(oldNode);
+        erase(begin()); // erase是删掉输入的iterator对应的元素
     }
     template<class T>
     void list<T>::push_back(const value_type& val){
-        auto node = newNode();
-        (tail.p)->data = val;
-        (tail.p)->next = node;
-        node->prev = tail.p;
-        tail.p = node;
+        insert(end(), val);
     }
     template<class T>
     void list<T>::pop_back(){
-        auto newTail = tail.p->prev;
-        newTail->next = nullptr;
-        deleteNode(tail.p);
-        tail.p = newTail;
+        iterator tmp = end(); // 需要临时变量，因为end()返回的是尾后迭代器，而不是最后一个元素的迭代器
+        erase(--tmp);
     }
     template<class T>
-    void list<T>::clear(){
+    void list<T>::clear(){ // 这个倒是项目作者简洁些，直接调用了erase，书里是单独实现的
         erase(begin(), end());
     }
     template<class T>
@@ -189,23 +179,23 @@ namespace WhoseTinySTL{
         } while (curNode != head.p);
     }
     /**********************************insert**********************************/
-    template<class T>
+    template<class T> // 参考书135页实现
     typename list<T>::iterator list<T>::insert(iterator position, const value_type& val){
-        if(position == begin()){
-            push_front(val);
-            return begin();
-        }else if(position == end()){
-            auto ret = position;
-            push_back(val);
-            return ret;
-        }
-        auto node = newNode(val);
-        auto prev = position.p->prev;
-        node->next = position.p;
-        node->prev = prev;
-        prev->next = node;
-        position.p->prev = node;
-        return iterator(node);
+        nodePtr tmp = newNode(val);
+        if(empty()){ // 链表为空，这情况书里根本没讨论，直接调用else那段代码必报错
+            head.p = tmp;
+            tail.p->next = tmp;
+            tail.p->prev = tmp;
+            tmp->next = tail.p;
+            tmp->prev = tail.p;
+        }else{
+            tmp->next = position.p;        
+            tmp->prev = position.p->prev;
+            position.p->prev->next = tmp;
+            position.p->prev = tmp;
+            head.p = tail.p->next; // 这句很关键！insert可能会改变head迭代器指向的对象，必须更新。
+        } // 上面这句能如此简单地实现也是多亏了list的空白尾后迭代器，因为什么操作它都不变。         
+        return iterator(tmp); // 书里这句直接写tmp了，显然不对，返回值类型都对不上
     }
     template<class T>
     void list<T>::insert(iterator position, size_type n, const value_type& val){
@@ -217,19 +207,20 @@ namespace WhoseTinySTL{
         insert_aux(position, first, last, typename std::is_integral<InputIterator>::type());
     }
     /**********************************erase**********************************/
-    template<class T>
+    template<class T> // 与insert一样，我采用书136页的实现方法
     typename list<T>::iterator list<T>::erase(iterator position){
-        if(position == head){
-            pop_front();
-            return head;
-        }
-        else{
-            auto prev = position.p->prev;
-            prev->next = position.p->next;
-            position.p->next->prev = prev;
-            deleteNode(position.p);
-            return iterator(prev->next);
-        }
+        nodePtr next_node = nodePtr(position.p->next);
+        nodePtr prev_node = nodePtr(position.p->prev);
+        prev_node->next = next_node;
+        next_node->prev = prev_node;
+        deleteNode(position.p);
+        if(next_node==prev_node){ // 和insert类似，erase把整个链表删空时得讨论head的指向
+            tail.p->prev = tail.p->next = nullptr; // 安全！
+            head.p = tail.p;
+        }else{
+            head.p = tail.p->next; // 这句很关键！erase可能会改变head迭代器指向的对象，必须更新。
+        }        
+        return iterator(next_node);
     }
     template<class T>
     typename list<T>::iterator list<T>::erase(iterator first, iterator last){

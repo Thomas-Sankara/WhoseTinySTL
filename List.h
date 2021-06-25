@@ -10,6 +10,8 @@
 
 #include <type_traits> // 不用自己的"TypeTraits.h"和vector的原因一样:用了is_integral方法
 
+#include <iostream>//for test
+
 namespace WhoseTinySTL{ // 我把作者的Detail命名空间删掉了
     template<class T>
     class list;
@@ -70,10 +72,10 @@ namespace WhoseTinySTL{ // 我把作者的Detail命名空间删掉了
             --*this;
             return res;
         }
-        bool operator ==(const self& rhs){
+        bool operator ==(const self& rhs)const{
             return p == rhs.p; // 作者是以友元函数的形式实现的，我觉得没必要，就写成成员函数了
         }
-        bool operator !=(const self& rhs){
+        bool operator !=(const self& rhs)const{
             return !(*this == rhs); // 作者是以友元函数的形式实现的，我觉得没必要，就写成成员函数了
         }
 

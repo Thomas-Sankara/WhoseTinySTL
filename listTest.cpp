@@ -12,7 +12,7 @@ int main(){
     WhoseTinySTL::list<string> a; // 类类型
     for(int i=0;i<5;i++) a.push_back(std::to_string(i));
     for(auto i=a.begin();i!=a.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
-    cout << "string, test finished" << endl << endl;
+    cout << endl << "string, test finished" << endl << endl;
 
     cout << "b:int test" << endl;
     WhoseTinySTL::list<int> b; // 内置类型
