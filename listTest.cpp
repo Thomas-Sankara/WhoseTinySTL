@@ -61,5 +61,54 @@ int main(){
     cout << "c: reverse test" << endl;
     c.reverse();
     for(auto i=c.begin();i!=c.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
-    cout << endl << "reverse finished" << endl << endl;
+    cout << endl << "reverse test finished" << endl << endl;
+
+    cout << "c: insert, remove test" << endl;
+    c.insert(c.begin(),2,"2");
+    for(auto i=c.begin();i!=c.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    cout << endl;
+    c.remove("2");
+    for(auto i=c.begin();i!=c.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    cout << endl << "insert, remove test finished" << endl << endl;
+
+    cout << "a,c: swap test" << endl;
+    cout << "original" << endl;
+    cout << "a:" << endl;
+    for(auto i=a.begin();i!=a.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    cout << endl << "c:" << endl;
+    for(auto i=c.begin();i!=c.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    a.swap(c);
+    cout << endl << "swapping" << endl;
+    cout << "a:" << endl;
+    for(auto i=a.begin();i!=a.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    cout << endl << "c:" << endl;
+    for(auto i=c.begin();i!=c.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    WhoseTinySTL::swap(c,a);
+    cout << endl <<  "swapping again in another way" << endl;
+    cout << "a:" << endl;
+    for(auto i=a.begin();i!=a.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    cout << endl << "c:" << endl;
+    for(auto i=c.begin();i!=c.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    cout << endl << "swap test finished" << endl << endl;
+
+    cout << "c: insert, unique test" << endl;
+    c.insert(c.begin(),4,"4");
+    for(auto i=c.begin();i!=c.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    cout << endl;
+    c.unique();
+    for(auto i=c.begin();i!=c.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    cout << endl << "insert, unique test finished" << endl << endl;
+
+    cout << "a,c: splice test" << endl;
+    auto tem_ac_0(a), tem_ac_1(a), tem_ac_2(a); // 拼接会两个数组都直接操作，别都用一个！
+    auto temIt = c.begin();
+    c.splice(++temIt, tem_ac_0);
+    for(auto i=c.begin();i!=c.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    cout << endl;
+    c.splice(++temIt, tem_ac_1, tem_ac_1.begin());
+    for(auto i=c.begin();i!=c.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    cout << endl;
+    c.splice(++temIt, tem_ac_2, tem_ac_2.begin(), tem_ac_2.end());
+    for(auto i=c.begin();i!=c.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    cout << endl << "splice test finished" << endl << endl;
 }
