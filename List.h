@@ -9,6 +9,7 @@
 #include "Functional.h" // 我自己加的，因为less的实现在该头文件中
 
 #include <type_traits> // 不用自己的"TypeTraits.h"和vector的原因一样:用了is_integral方法
+#include <iostream>// fortest
 
 namespace WhoseTinySTL{ // 我把作者的Detail命名空间删掉了
     template<class T>
@@ -146,8 +147,6 @@ namespace WhoseTinySTL{ // 我把作者的Detail命名空间删掉了
         template <class Compare>
         void merge(list& x, Compare comp);
         void sort();
-        template <class Compare>
-        void sort(Compare comp);
         void reverse();
     private:
         void ctorAux(size_type n, const value_type& val, std::true_type);
@@ -159,7 +158,7 @@ namespace WhoseTinySTL{ // 我把作者的Detail命名空间删掉了
         template<class InputIterator>
         void insert_aux(iterator position, InputIterator first, InputIterator last, std::false_type);
         const_iterator changeIteratorToConstIterator(iterator& it)const;
-        void transfer(iterator position, iterator first, iterator last);
+        void transfer(iterator position, list& x, iterator first, iterator last);
     public:
         template<class _T>
         friend void swap(list<_T>& x, list<_T>& y);

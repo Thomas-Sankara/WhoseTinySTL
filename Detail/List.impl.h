@@ -47,16 +47,27 @@ namespace WhoseTinySTL{
     template<class T> // 将[first,last)内的所有元素移动到position之前。该函数被splice,merge,reverse,sort使用
     void list<T>::transfer(iterator position, list& x, iterator first, iterator last){ // 书中它是protected的
         if(position != last){
-            last.p->prev->next = position.p;
-            first.p->prev->next = last.p;
-            position.p->prev->next = first.p;
-            nodePtr tmp = position.p->prev;
-            position.p->prev = last.p->prev;
-            last.p->prev = first.p->prev;
-            first.p->prev = tmp;
-            head.p = tail.p->next; // 书里没这句，但我们知道，涉及节点操作一定在操作后更新head迭代器
-            x.head.p = x.tail.p->next; // 这句就更容易忘了。书里应该是少一个参数：被操作的list x！
-        } // 被操作对象的节点也被修改了，也得更新head迭代器！
+            if(empty()){ // position所在list为空，要单独讨论
+                last.p->prev->next = position.p; // position==tail
+                first.p->prev->next = last.p;
+                position.p->next = first.p; // position==head
+                position.p->prev = last.p->prev; // position==tail
+                last.p->prev = first.p->prev;
+                first.p->prev = position.p; // position==head
+                head.p = tail.p->next;
+                x.head.p = x.tail.p->next;
+            }else{
+                last.p->prev->next = position.p;
+                first.p->prev->next = last.p;
+                position.p->prev->next = first.p;
+                nodePtr tmp = position.p->prev;
+                position.p->prev = last.p->prev;
+                last.p->prev = first.p->prev;
+                first.p->prev = tmp;
+                head.p = tail.p->next; // 书里没这句，但我们知道，涉及节点操作一定在操作后更新head迭代器
+                x.head.p = x.tail.p->next; // 这句就更容易忘了。书里应该是少一个参数：被操作的list x！
+            } // 被操作对象的节点也被修改了，也得更新head迭代器！
+        }
     }
     // 思路是复制个静态的node，内容和原node一样，然后返回指向该静态node的iterator
     // 变量node是临时变量，作者把node的地址拿来初始化const_iterator,结果出了函数，这个地址就无效了
@@ -385,10 +396,11 @@ namespace WhoseTinySTL{
         // 用类似加法进位的思想，每次从链表中拿出一个元素，与这些子序列进行归并，
         // 产生进位则与下一个子序列进行归并，一直到没有进位的产生。
         list<T> carry;       // 加法过程中保存中间结果
-        list<T> counter[64]; // 存放不同长度的子序列，每个自序列本身有序
+        list<T> counter[64]; // 存放不同长度的子序列，每个子序列本身有序
         int fill = 0;               // 当前二进制位数
         while (!empty()) {          // 有了前面splice和merge的代码你知道，它们都没有引入新的内存，只是改指针
-            carry.splice(carry.begin(), *this, begin()); // 将list的表头元素转入carry中，相当于+1操作
+            auto temIt = begin();
+            carry.splice(carry.begin(), *this, begin(), ++temIt); // 将list的表头元素转入carry中，相当于+1操作
             int i = 0;                              // 处理当前的二进制位数
             while(i<fill && !counter[i].empty()){   // 处理+1产生的进位
                 counter[i].merge(carry);            // 进位。由于merge调用了transfer，执行完这行后carry里面是空的。

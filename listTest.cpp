@@ -119,4 +119,9 @@ int main(){
     f.merge(a);
     for(auto i=f.begin();i!=f.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
     cout << endl << "merge test finished" << endl << endl;
+
+    cout << "b: sort test" << endl;
+    b.sort();
+    for(auto i=b.begin();i!=b.end();i++) cout << *i << ' '; // 测试list迭代器的++运算符
+    cout << endl << "sort test finished" << endl << endl;
 }
