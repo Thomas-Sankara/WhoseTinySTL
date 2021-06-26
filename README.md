@@ -24,3 +24,4 @@
 7.原作者对list里的const_iterator的处理问题非常大。相应地，listIterator的设计也是有问题的，我都写注释里了，问题非常多。而由问题引发的问题倒也让我多学了不少知识，虽然暂时用不上，比如std::add_const<T>()这种东西。 <br>
 8.list中的push、pop与insert、erase的关系可以用两种，可以是前者引用后者，也可以是后者引用前者。项目作者是用后者引用前者，我仿照书中写法用前者引用后者。因为后者引用前者，前者就要单独实现，一共四个push和pop函数，指针操作重复很多。所以我选择用前者引用后者，这是书中的写法。不过要小心，书中没有讨论空列表insert和把列表erase空这两个情况，也没有讨论insert和erase的对象恰好是首元素的情况。这部分代码我都补上了，更详细的解释可以看List.impl.h里的注释。 <br>
 9.list中，STL先写好了一个辅助函数transfer（书139页），然后让splice，merge，reverse和sort调用它，项目作者硬写了两个，merge和sort里则调用了与transfer功能相似的splice。为了编码风格统一，我采用STL的写法，先写一个transfer，然后统一调用。 <br>
+10.list实现里最要留心的问题就是头指针的变化和list为空这两个情况，有时还会一起遇到。newNode和deleteNode只负责申请内存、构造、析构和释放内存，与list关系不大。处理头指针和list为空的代码都写进insert、erase和transfer里，其他代码要增删节点则只调用他们，这样可以把头指针和list为空的情况集中在这三个函数里处理。
